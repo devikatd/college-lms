@@ -1,0 +1,215 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Student Academic Portal — {{ user.get_full_name|default:user.username }}{% endblock %}
+
+{% block content %}
+<div class="welcome-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+        <div>
+            <h2 class="welcome-title">{{ user.get_full_name|default:user.username }}</h2>
+            <p class="welcome-subtitle">
+                {% if student_profile %}
+                    USN: <strong>{{ student_profile.register_number }}</strong> &bull; Roll: {{ student_profile.roll_number }} &bull; {{ student_profile.batch.name }}
+                {% else %}
+                    Student Academic Profile
+                {% endif %}
+            </p>
+        </div>
+        <div style="display: flex; gap: var(--space-sm);">
+            <span class="badge badge-student" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                Status: {{ student_profile.get_status_display|default:"Active" }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Academic Summary Bar -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-xl);">
+    <div class="card" style="border-left: 4px solid var(--primary);">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Current Semester</div>
+        <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">
+            Semester {{ student_profile.batch.current_semester|default:1 }}
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">Cohort {{ student_profile.batch.admission_year }}–{{ student_profile.batch.graduation_year }}</div>
+    </div>
+    <div class="card" style="border-left: 4px solid #10b981;">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Enrolled Credits</div>
+        <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">
+            {{ total_enrolled_credits }}
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">Active Term Credits</div>
+    </div>
+    <div class="card" style="border-left: 4px solid #06b6d4;">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Program & Scheme</div>
+        <div style="font-size: 1.2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">
+            {{ student_profile.program.code }}
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">{{ student_profile.batch.scheme.code }}</div>
+    </div>
+</div>
+
+<!-- Active Course Registrations -->
+<h3 style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: var(--space-md);">
+    Enrolled Courses (Active Semester)
+</h3>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-2xl);">
+    {% for enr in enrollments %}
+    <div class="card" style="border-top: 3px solid var(--primary-light);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <span style="font-size: 0.8rem; font-weight: 800; color: var(--primary-light);">{{ enr.course_offering.course.code }}</span>
+                <h4 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin: 0.2rem 0;">{{ enr.course_offering.course.title }}</h4>
+            </div>
+            <span class="badge badge-student">{{ enr.course_offering.course.credits }} Credits</span>
+        </div>
+
+        <div style="margin: var(--space-sm) 0; font-size: 0.8rem; color: var(--text-secondary);">
+            Instructor: <strong>{{ enr.course_offering.faculty.full_name|default:"Department Coordinator" }}</strong> &bull; Sec {{ enr.course_offering.section }}
+        </div>
+
+        <!-- Attendance Meter -->
+        <div style="margin-top: var(--space-sm); padding-top: var(--space-sm); border-top: 1px solid var(--border-subtle);">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.25rem;">
+                <span style="color: var(--text-secondary);">Attendance Record</span>
+                <span style="color: #34d399;">{{ enr.attendance_percentage }}%</span>
+            </div>
+            <div style="width: 100%; height: 6px; background: rgba(15, 23, 42, 0.8); border-radius: 9999px; overflow: hidden;">
+                <div style="width: {{ enr.attendance_percentage }}%; height: 100%; background: #10b981; border-radius: 9999px;"></div>
+            </div>
+        </div>
+
+        <!-- Continuous Internal Evaluation (CIE) Marks -->
+        {% if enr.marks.all %}
+        <div style="margin-top: var(--space-sm); padding-top: var(--space-sm); border-top: 1px solid var(--border-subtle);">
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.25rem;">
+                Internal Assessment Scores
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                {% for mark in enr.marks.all %}
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; background: rgba(15, 23, 42, 0.5); padding: 0.25rem 0.5rem; border-radius: var(--radius-sm);">
+                    <span style="color: var(--text-secondary);">{{ mark.component.name }}</span>
+                    <strong style="color: #38bdf8;">{{ mark.marks_obtained }} / {{ mark.component.max_marks }}</strong>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="card" style="grid-column: 1 / -1; padding: var(--space-xl); text-align: center;">
+        <p style="color: var(--text-secondary);">No courses actively enrolled for this semester.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Weekly Class Timetable -->
+{% if timetable_entries %}
+<div style="margin-bottom: var(--space-xl);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+        <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🗓️</span> Weekly Class Timetable
+        </h3>
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">Semester Schedule</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-md);">
+        {% for slot in timetable_entries %}
+        <div class="card" style="background: rgba(30, 41, 59, 0.6); border-left: 4px solid #6366f1;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="padding: 2px 8px; background: rgba(99, 102, 241, 0.2); color: #818cf8; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">
+                    {{ slot.get_day_of_week_display }} • Slot {{ slot.slot_number }}
+                </span>
+                <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">
+                    {{ slot.start_time|time:"H:i" }} - {{ slot.end_time|time:"H:i" }}
+                </span>
+            </div>
+            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); margin-bottom: 2px;">
+                {{ slot.course_offering.course.code }}
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                {{ slot.course_offering.course.title }}
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #94a3b8; border-top: 1px solid var(--border-subtle); padding-top: 0.4rem;">
+                <span>📍 {{ slot.classroom }}</span>
+                <span>👨‍🏫 {{ slot.course_offering.faculty.full_name|default:"Faculty" }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Digital Learning Materials & Notes Repository -->
+{% if learning_materials %}
+<div style="margin-bottom: var(--space-xl);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+        <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+            <span>📚</span> Digital Course Materials &amp; Resources
+        </h3>
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">Direct Faculty Uploads</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--space-md);">
+        {% for mat in learning_materials %}
+        <div class="card" style="background: rgba(30, 41, 59, 0.5); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                    <span style="font-size: 0.75rem; font-weight: 700; color: #38bdf8; text-transform: uppercase;">
+                        {{ mat.course_offering.course.code }}
+                    </span>
+                    <span style="padding: 2px 6px; background: rgba(14, 165, 233, 0.15); color: #38bdf8; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">
+                        {{ mat.get_material_type_display }}
+                    </span>
+                </div>
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.4rem 0;">
+                    {{ mat.title }}
+                </h4>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0 0 0.75rem 0; line-height: 1.4;">
+                    {{ mat.description|truncatechars:100 }}
+                </p>
+            </div>
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.7rem; color: #64748b;">{{ mat.uploaded_at|date:"M d, Y" }}</span>
+                <a href="{{ mat.resource_url }}" target="_blank" rel="noopener noreferrer" style="font-size: 0.8rem; color: #6366f1; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem;">
+                    Access Resource ↗
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Curriculum Roadmap for this Student's Scheme -->
+{% if curriculum_semesters %}
+<h3 style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: var(--space-md);">
+    Curriculum Roadmap ({{ student_profile.batch.scheme.name }})
+</h3>
+
+<div style="display: flex; flex-direction: column; gap: var(--space-md);">
+    {% for sem in curriculum_semesters %}
+    <div class="card" style="background: rgba(30, 41, 59, 0.5);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-sm);">
+            <span style="font-weight: 700; font-size: 0.95rem; color: #93c5fd;">
+                Semester {{ sem.semester_number }} ({{ sem.get_semester_type_display }})
+            </span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">{{ sem.courses.count }} Courses</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-sm);">
+            {% for course in sem.courses.all %}
+            <div style="padding: 0.5rem 0.75rem; background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-primary);">{{ course.code }}: {{ course.title }}</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">L-T-P: {{ course.ltp_structure }}</div>
+                </div>
+                <span style="font-size: 0.75rem; font-weight: 700; color: #34d399; margin-left: var(--space-sm);">{{ course.credits }} Cr</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

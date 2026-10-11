@@ -1,0 +1,121 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Take Attendance — {{ offering.course.code }}{% endblock %}
+
+{% block content %}
+<div class="welcome-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+        <div>
+            <h2 class="welcome-title">{{ offering.course.code }}: {{ offering.course.title }}</h2>
+            <p class="welcome-subtitle">
+                Class Attendance &bull; Batch: <strong>{{ offering.batch.name }}</strong> &bull; Section {{ offering.section }} &bull; Term: {{ offering.academic_year }} ({{ offering.get_term_display }})
+            </p>
+        </div>
+        <div style="display: flex; gap: var(--space-sm);">
+            <a href="{% url 'enrollment:attendance_history' offering.id %}" class="btn btn-secondary">
+                View Ledger History
+            </a>
+            <a href="{% url 'portal:faculty_portal' %}" class="btn btn-secondary">
+                &larr; Faculty Portal
+            </a>
+        </div>
+    </div>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="card" style="margin-bottom: var(--space-lg);">
+        <div class="card-header">
+            <h3 class="card-title">Session Details</h3>
+            <span class="badge badge-faculty">{{ enrollments.count }} Enrolled Students</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-md); margin-top: var(--space-md);">
+            <div class="form-group">
+                <label class="form-label" for="date">Session Date</label>
+                <input type="date" name="date" id="date" class="form-input" value="{{ today }}" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="slot">Timetable Period / Slot</label>
+                <select name="slot" id="slot" class="form-input" required>
+                    <option value="1">Slot 1 (09:00 - 10:00)</option>
+                    <option value="2">Slot 2 (10:00 - 11:00)</option>
+                    <option value="3">Slot 3 (11:15 - 12:15)</option>
+                    <option value="4">Slot 4 (12:15 - 01:15)</option>
+                    <option value="5">Slot 5 (02:00 - 03:00)</option>
+                    <option value="6">Slot 6 (03:00 - 04:00)</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label class="form-label" for="topic_covered">Topic Covered / Experiment</label>
+                <input type="text" name="topic_covered" id="topic_covered" class="form-input" placeholder="e.g. Asymptotic Notation, Binary Search Trees, Unit 2 Review">
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Roster Table -->
+    <div class="card">
+        <div class="card-header">
+            <div style="display: flex; align-items: center; gap: var(--space-md);">
+                <h3 class="card-title">Student Attendance Roster</h3>
+                <button type="button" class="btn btn-secondary" onclick="toggleAll(true)" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;">Mark All Present</button>
+                <button type="button" class="btn btn-secondary" onclick="toggleAll(false)" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;">Mark All Absent</button>
+            </div>
+        </div>
+
+        <div style="overflow-x: auto; margin-top: var(--space-md);">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--border-subtle); text-align: left; color: var(--text-muted);">
+                        <th style="padding: 0.6rem; width: 80px; text-align: center;">Status</th>
+                        <th style="padding: 0.6rem;">USN / Register No</th>
+                        <th style="padding: 0.6rem;">Student Name</th>
+                        <th style="padding: 0.6rem;">Roll No</th>
+                        <th style="padding: 0.6rem;">Cumulative Attd</th>
+                        <th style="padding: 0.6rem; min-width: 180px;">Remarks (Optional)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enr in enrollments %}
+                    <tr style="border-bottom: 1px solid var(--border-subtle);">
+                        <td style="padding: 0.6rem; text-align: center;">
+                            <input type="checkbox" name="present_{{ enr.student.id }}" class="attd-check" checked style="width: 20px; height: 20px; accent-color: #10b981; cursor: pointer;">
+                        </td>
+                        <td style="padding: 0.6rem; font-weight: 700; color: var(--text-primary);">{{ enr.student.register_number }}</td>
+                        <td style="padding: 0.6rem; font-weight: 600; color: var(--text-primary);">{{ enr.student.full_name }}</td>
+                        <td style="padding: 0.6rem; color: var(--text-muted);">{{ enr.student.roll_number }}</td>
+                        <td style="padding: 0.6rem;">
+                            <span style="font-weight: 700; color: {% if enr.attendance_percentage >= 75 %}#34d399{% else %}#ef4444{% endif %};">
+                                {{ enr.attendance_percentage }}%
+                            </span>
+                        </td>
+                        <td style="padding: 0.6rem;">
+                            <input type="text" name="remarks_{{ enr.student.id }}" class="form-input" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" placeholder="e.g. Leave, Late">
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="padding: var(--space-lg); text-align: center; color: var(--text-secondary);">No enrolled students found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top: var(--space-xl); display: flex; justify-content: flex-end; gap: var(--space-md);">
+            <a href="{% url 'portal:faculty_portal' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary" style="background: #10b981;">
+                Save & Update Attendance
+            </button>
+        </div>
+    </div>
+</form>
+
+<script>
+    function toggleAll(status) {
+        document.querySelectorAll('.attd-check').forEach(cb => cb.checked = status);
+    }
+</script>
+{% endblock %}

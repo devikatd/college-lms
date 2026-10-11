@@ -1,0 +1,80 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Cohort Progression — {{ batch.name }}{% endblock %}
+
+{% block content %}
+<div class="welcome-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+        <div>
+            <h2 class="welcome-title">Promote Student Batch: {{ batch.name }}</h2>
+            <p class="welcome-subtitle">
+                Program: <strong>{{ batch.program.name }}</strong> &bull; Scheme: {{ batch.scheme.name }} [{{ batch.scheme.code }}]
+            </p>
+        </div>
+        <a href="{% url 'portal:department_dashboard' %}" class="btn btn-secondary">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="card" style="max-width: 680px; margin: 0 auto; border-top: 4px solid var(--primary);">
+    <div class="card-header">
+        <h3 class="card-title">Semester Progression Confirmation</h3>
+        {% if is_final_semester %}
+            <span class="badge badge-admin">Final Semester / Graduation</span>
+        {% else %}
+            <span class="badge badge-student">Progression Step</span>
+        {% endif %}
+    </div>
+
+    <div style="margin: var(--space-lg) 0; padding: var(--space-md); background: rgba(15, 23, 42, 0.6); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); font-size: 0.9rem;">
+            <div>
+                <span style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Current Semester</span>
+                <div style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary); margin-top: 0.2rem;">
+                    Semester {{ current_semester }}
+                </div>
+            </div>
+            <div>
+                <span style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Target State</span>
+                <div style="font-size: 1.4rem; font-weight: 800; color: #34d399; margin-top: 0.2rem;">
+                    {% if is_final_semester %}
+                        Graduated
+                    {% else %}
+                        Semester {{ current_semester|add:1 }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: var(--space-md); padding-top: var(--space-md); border-top: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-secondary);">
+            <div><strong>Total Program Duration:</strong> {{ max_semesters }} Semesters ({{ batch.program.duration_years }} Years)</div>
+            <div><strong>Active Enrolled Students:</strong> {{ batch.students.count }} Students</div>
+        </div>
+    </div>
+
+    {% if is_final_semester %}
+    <div style="padding: var(--space-md); background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-md); margin-bottom: var(--space-lg); font-size: 0.85rem; color: #fbbf24;">
+        <strong>Notice:</strong> This cohort has completed the maximum curriculum duration. Promoting now will mark the batch as <strong>Graduated</strong> and transition all enrolled active students to <em>Graduated</em> status.
+    </div>
+    {% else %}
+    <div style="padding: var(--space-md); background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: var(--radius-md); margin-bottom: var(--space-lg); font-size: 0.85rem; color: #818cf8;">
+        Promoting this batch advances the active curriculum term to <strong>Semester {{ current_semester|add:1 }}</strong>. Once promoted, you can generate course offerings and enroll students for the new term.
+    </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div style="display: flex; justify-content: flex-end; gap: var(--space-md);">
+            <a href="{% url 'portal:department_dashboard' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary" style="background: {% if is_final_semester %}#d97706{% else %}var(--primary){% endif %};">
+                {% if is_final_semester %}
+                    Confirm Batch Graduation
+                {% else %}
+                    Promote to Semester {{ current_semester|add:1 }}
+                {% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

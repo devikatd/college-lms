@@ -1,0 +1,226 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Attendance Shortage & Exam Ineligibility Alerts — RVCE LMS{% endblock %}
+
+{% block content %}
+<div class="page-container" style="max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem;">
+    <!-- Breadcrumb & Header -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">
+                <a href="{% if user.is_college_admin %}{% url 'portal:admin_dashboard' %}{% else %}{% url 'portal:department_dashboard' %}{% endif %}" style="color: #6366f1; text-decoration: none;">Dashboard</a>
+                <span style="margin: 0 0.5rem;">/</span>
+                <span>Academic Telemetry</span>
+            </div>
+            <h1 style="font-size: 1.85rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 0.75rem;">
+                <span style="display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; background: #fee2e2; color: #dc2626; border-radius: 10px; font-size: 1.25rem;">⚠️</span>
+                Attendance Shortage &amp; Exam Ineligibility Alerts
+            </h1>
+            <p style="color: #64748b; margin: 0.5rem 0 0 0; font-size: 0.95rem;">
+                Statutory 75% attendance threshold audit across degree programs and active course sections.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <button onclick="window.print()" class="btn" style="background: white; border: 1px solid #cbd5e1; color: #334155; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;">
+                🖨️ Print Report
+            </button>
+            <a href="{% if user.is_college_admin %}{% url 'portal:admin_dashboard' %}{% else %}{% url 'portal:department_dashboard' %}{% endif %}" class="btn" style="background: #f1f5f9; color: #475569; padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; font-weight: 500;">
+                ← Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Telemetry KPI Summary Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+        <!-- Card 1: Total -->
+        <div style="background: white; border-radius: 12px; padding: 1.25rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-size: 0.85rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Audited Enrollments</span>
+                <span style="padding: 4px 8px; background: #f1f5f9; color: #475569; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">ACTIVE</span>
+            </div>
+            <div style="font-size: 2rem; font-weight: 700; color: #0f172a;">{{ total_records }}</div>
+            <div style="font-size: 0.8rem; color: #64748b; margin-top: 0.25rem;">Total student-course combinations</div>
+        </div>
+
+        <!-- Card 2: Critical Shortage (<75%) -->
+        <a href="?status=critical{% if selected_dept_id %}&department={{ selected_dept_id }}{% endif %}" style="text-decoration: none;">
+            <div style="background: #fff5f5; border-radius: 12px; padding: 1.25rem; border: 1px solid #fecaca; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: transform 0.15s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <span style="font-size: 0.85rem; font-weight: 600; color: #b91c1c; text-transform: uppercase; letter-spacing: 0.05em;">Exam Ineligible (&lt;75%)</span>
+                    <span style="padding: 4px 8px; background: #dc2626; color: white; border-radius: 6px; font-size: 0.75rem; font-weight: 700;">CRITICAL</span>
+                </div>
+                <div style="font-size: 2rem; font-weight: 700; color: #dc2626;">{{ critical_records }}</div>
+                <div style="font-size: 0.8rem; color: #991b1b; margin-top: 0.25rem;">Barred from semester examinations</div>
+            </div>
+        </a>
+
+        <!-- Card 3: Warning (75%-80%) -->
+        <a href="?status=warning{% if selected_dept_id %}&department={{ selected_dept_id }}{% endif %}" style="text-decoration: none;">
+            <div style="background: #fffbeb; border-radius: 12px; padding: 1.25rem; border: 1px solid #fde68a; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: transform 0.15s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <span style="font-size: 0.85rem; font-weight: 600; color: #b45309; text-transform: uppercase; letter-spacing: 0.05em;">At-Risk Warning (75-80%)</span>
+                    <span style="padding: 4px 8px; background: #f59e0b; color: white; border-radius: 6px; font-size: 0.75rem; font-weight: 700;">CAUTION</span>
+                </div>
+                <div style="font-size: 2rem; font-weight: 700; color: #d97706;">{{ warning_records }}</div>
+                <div style="font-size: 0.8rem; color: #92400e; margin-top: 0.25rem;">Borderline shortage warning zone</div>
+            </div>
+        </a>
+
+        <!-- Card 4: Satisfactory (>=80%) -->
+        <a href="?status=satisfactory{% if selected_dept_id %}&department={{ selected_dept_id }}{% endif %}" style="text-decoration: none;">
+            <div style="background: #f0fdf4; border-radius: 12px; padding: 1.25rem; border: 1px solid #bbf7d0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: transform 0.15s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <span style="font-size: 0.85rem; font-weight: 600; color: #15803d; text-transform: uppercase; letter-spacing: 0.05em;">Good Standing (&ge;80%)</span>
+                    <span style="padding: 4px 8px; background: #16a34a; color: white; border-radius: 6px; font-size: 0.75rem; font-weight: 700;">COMPLIANT</span>
+                </div>
+                <div style="font-size: 2rem; font-weight: 700; color: #16a34a;">{{ satisfactory_records }}</div>
+                <div style="font-size: 0.8rem; color: #166534; margin-top: 0.25rem;">Meets full institutional standards</div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div style="background: white; border-radius: 12px; padding: 1.25rem; border: 1px solid #e2e8f0; margin-bottom: 1.5rem;">
+        <form method="get" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+            <!-- Left: Filter chips -->
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                <span style="font-size: 0.85rem; font-weight: 600; color: #475569; margin-right: 0.25rem;">Filter By:</span>
+                <a href="?status=all{% if selected_dept_id %}&department={{ selected_dept_id }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}" 
+                   style="padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; text-decoration: none; {% if filter_status == 'all' %}background: #4f46e5; color: white;{% else %}background: #f1f5f9; color: #475569;{% endif %}">
+                    All ({{ total_records }})
+                </a>
+                <a href="?status=critical{% if selected_dept_id %}&department={{ selected_dept_id }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}" 
+                   style="padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; text-decoration: none; {% if filter_status == 'critical' %}background: #dc2626; color: white;{% else %}background: #fee2e2; color: #991b1b;{% endif %}">
+                    🚨 Shortage &lt;75% ({{ critical_records }})
+                </a>
+                <a href="?status=warning{% if selected_dept_id %}&department={{ selected_dept_id }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}" 
+                   style="padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; text-decoration: none; {% if filter_status == 'warning' %}background: #d97706; color: white;{% else %}background: #fef3c7; color: #92400e;{% endif %}">
+                    ⚠️ At Risk ({{ warning_records }})
+                </a>
+                <a href="?status=satisfactory{% if selected_dept_id %}&department={{ selected_dept_id }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}" 
+                   style="padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; text-decoration: none; {% if filter_status == 'satisfactory' %}background: #16a34a; color: white;{% else %}background: #dcfce7; color: #166534;{% endif %}">
+                    ✅ Good Standing ({{ satisfactory_records }})
+                </a>
+            </div>
+
+            <!-- Right: Search and Department dropdown -->
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                {% if departments %}
+                <select name="department" onchange="this.form.submit()" style="padding: 0.5rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; background: white;">
+                    <option value="">All Departments</option>
+                    {% for d in departments %}
+                    <option value="{{ d.id }}" {% if selected_dept_id == d.id|stringformat:"s" %}selected{% endif %}>{{ d.code }} — {{ d.name }}</option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+
+                <input type="hidden" name="status" value="{{ filter_status }}">
+                <div style="position: relative;">
+                    <input type="text" name="q" value="{{ search_q }}" placeholder="Search USN, name, course..." style="padding: 0.5rem 0.75rem 0.5rem 2rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; width: 220px;">
+                    <span style="position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem;">🔍</span>
+                </div>
+                <button type="submit" class="btn" style="background: #0f172a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">
+                    Filter
+                </button>
+                {% if search_q or selected_dept_id or filter_status != 'all' %}
+                <a href="{% url 'portal:attendance_alerts' %}" style="font-size: 0.85rem; color: #64748b; text-decoration: underline;">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Student Attendance Audit Roster Table -->
+    <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+            <thead>
+                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                    <th style="padding: 1rem 1.25rem;">Student Details</th>
+                    <th style="padding: 1rem 1.25rem;">Program &amp; Batch</th>
+                    <th style="padding: 1rem 1.25rem;">Course Offering</th>
+                    <th style="padding: 1rem 1.25rem;">Faculty Instructor</th>
+                    <th style="padding: 1rem 1.25rem; text-align: center;">Attendance %</th>
+                    <th style="padding: 1rem 1.25rem; text-align: right;">Examination Eligibility</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enr in enrollments %}
+                <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+                    <!-- Student details -->
+                    <td style="padding: 1rem 1.25rem;">
+                        <div style="font-weight: 600; color: #0f172a;">{{ enr.student.full_name }}</div>
+                        <div style="font-family: monospace; font-size: 0.8rem; color: #4338ca; font-weight: 600; margin-top: 2px;">{{ enr.student.register_number }}</div>
+                    </td>
+
+                    <!-- Program and batch -->
+                    <td style="padding: 1rem 1.25rem;">
+                        <div style="font-weight: 500; color: #334155;">{{ enr.student.batch.program.code }}</div>
+                        <div style="font-size: 0.8rem; color: #64748b;">{{ enr.student.batch.name }} (Sem {{ enr.student.batch.current_semester }})</div>
+                    </td>
+
+                    <!-- Course details -->
+                    <td style="padding: 1rem 1.25rem;">
+                        <div style="font-weight: 600; color: #0f172a;">{{ enr.course_offering.course.code }}</div>
+                        <div style="font-size: 0.8rem; color: #64748b;">{{ enr.course_offering.course.title }} (Sec {{ enr.course_offering.section }})</div>
+                    </td>
+
+                    <!-- Faculty Instructor -->
+                    <td style="padding: 1rem 1.25rem;">
+                        <div style="font-weight: 500; color: #334155;">
+                            {% if enr.course_offering.faculty %}
+                                {{ enr.course_offering.faculty.full_name }}
+                            {% else %}
+                                <span style="color: #94a3b8; font-style: italic;">Unassigned</span>
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 0.75rem; color: #64748b;">{{ enr.course_offering.academic_year }} • {{ enr.course_offering.term }}</div>
+                    </td>
+
+                    <!-- Attendance Progress & Score -->
+                    <td style="padding: 1rem 1.25rem; text-align: center;">
+                        <div style="font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; {% if enr.attendance_percentage < 75 %}color: #dc2626;{% elif enr.attendance_percentage < 80 %}color: #d97706;{% else %}color: #16a34a;{% endif %}">
+                            {{ enr.attendance_percentage }}%
+                        </div>
+                        <div style="background: #e2e8f0; height: 6px; width: 100px; margin: 0 auto; border-radius: 9999px; overflow: hidden;">
+                            <div style="height: 100%; width: {{ enr.attendance_percentage }}%; {% if enr.attendance_percentage < 75 %}background: #dc2626;{% elif enr.attendance_percentage < 80 %}background: #f59e0b;{% else %}background: #16a34a;{% endif %}"></div>
+                        </div>
+                    </td>
+
+                    <!-- Eligibility Status Badge -->
+                    <td style="padding: 1rem 1.25rem; text-align: right;">
+                        {% if enr.attendance_percentage < 75 %}
+                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; border-radius: 9999px; font-size: 0.75rem; font-weight: 700;">
+                            ⛔ INELIGIBLE (SHORTAGE)
+                        </span>
+                        {% elif enr.attendance_percentage < 80 %}
+                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">
+                            ⚠️ AT RISK (&lt;80%)
+                        </span>
+                        {% else %}
+                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">
+                            ✓ ELIGIBLE FOR EXAM
+                        </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="padding: 3rem 1.5rem; text-align: center; color: #64748b;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎉</div>
+                        <div style="font-size: 1.1rem; font-weight: 600; color: #334155;">No matching student attendance records found.</div>
+                        <div style="font-size: 0.85rem; margin-top: 0.25rem;">Try adjusting the filter criteria or search keyword.</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Statutory Regulatory Notice -->
+    <div style="margin-top: 2rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem 1.25rem; display: flex; gap: 1rem; align-items: flex-start;">
+        <span style="font-size: 1.25rem;">ℹ️</span>
+        <div style="font-size: 0.85rem; color: #475569; line-height: 1.5;">
+            <strong>Institutional Academic Bylaw Reference:</strong> Under collegiate academic regulations, a minimum of <strong>75% aggregate attendance</strong> in each registered course is mandatory to qualify for the Semester End Examination (SEE). Students recording between 75% and 80% are placed under strict academic surveillance. Course coordinators and Head of Departments must issue shortage notifications prior to final grade sheet submission.
+        </div>
+    </div>
+</div>
+{% endblock %}

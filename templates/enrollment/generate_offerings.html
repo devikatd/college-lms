@@ -1,0 +1,136 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Initialize Course Offerings — College LMS{% endblock %}
+
+{% block content %}
+<div class="welcome-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+        <div>
+            <h2 class="welcome-title">Initialize Course Offerings</h2>
+            <p class="welcome-subtitle">
+                Automated curriculum mapping: Pulls syllabus subjects for a cohort's active semester, assigns faculty, and generates live classroom offerings.
+            </p>
+        </div>
+        <a href="{% url 'portal:department_dashboard' %}" class="btn btn-secondary">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: var(--space-xl);">
+    <div class="card-header">
+        <h3 class="card-title">1. Select Target Cohort & Term</h3>
+    </div>
+
+    <form method="get" id="batchSelectForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-md); margin-top: var(--space-md);">
+        <div class="form-group">
+            <label class="form-label" for="batch_id">Select Batch / Cohort</label>
+            <select name="batch_id" id="batch_id" class="form-input" onchange="document.getElementById('batchSelectForm').submit()">
+                <option value="">-- Choose Active Cohort --</option>
+                {% for b in batches %}
+                <option value="{{ b.id }}" {% if selected_batch and selected_batch.id == b.id %}selected{% endif %}>
+                    {{ b.name }} (Sem {{ b.current_semester }}) &bull; {{ b.program.code }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+</div>
+
+{% if selected_batch %}
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="batch_id" value="{{ selected_batch.id }}">
+
+    <div class="card" style="margin-bottom: var(--space-xl);">
+        <div class="card-header">
+            <h3 class="card-title">2. Operational Academic Term</h3>
+            <span class="badge badge-admin">{{ selected_batch.name }} &bull; Semester {{ selected_batch.current_semester }}</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-md); margin-top: var(--space-md);">
+            <div class="form-group">
+                <label class="form-label" for="academic_year">Academic Calendar Year</label>
+                <input type="text" name="academic_year" id="academic_year" class="form-input" value="2024-2025" required placeholder="e.g. 2024-2025">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="term">Semester Term</label>
+                <select name="term" id="term" class="form-input" required>
+                    <option value="ODD" {% if selected_batch.current_semester|divisibleby:2 == False %}selected{% endif %}>Odd Term (Fall / Mon-Dec)</option>
+                    <option value="EVEN" {% if selected_batch.current_semester|divisibleby:2 %}selected{% endif %}>Even Term (Spring / Jan-May)</option>
+                    <option value="SUMMER">Summer Term</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="section">Classroom Section</label>
+                <input type="text" name="section" id="section" class="form-input" value="A" required placeholder="A, B, or Section 1">
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Preview & Faculty Allocation Table -->
+    <div class="card" style="margin-bottom: var(--space-xl);">
+        <div class="card-header">
+            <h3 class="card-title">3. Curriculum Courses & Faculty Allocations (Semester {{ selected_batch.current_semester }})</h3>
+            <span class="badge badge-dept">{{ preview_courses|length }} Subjects Pulled from Scheme</span>
+        </div>
+
+        {% if preview_courses %}
+        <div style="overflow-x: auto; margin-top: var(--space-md);">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--border-subtle); text-align: left; color: var(--text-muted);">
+                        <th style="padding: 0.75rem 0.5rem;">Course Code</th>
+                        <th style="padding: 0.75rem 0.5rem;">Title</th>
+                        <th style="padding: 0.75rem 0.5rem;">Type</th>
+                        <th style="padding: 0.75rem 0.5rem;">Credits</th>
+                        <th style="padding: 0.75rem 0.5rem;">L-T-P</th>
+                        <th style="padding: 0.75rem 0.5rem; min-width: 220px;">Assign Faculty Instructor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for course in preview_courses %}
+                    <tr style="border-bottom: 1px solid var(--border-subtle);">
+                        <td style="padding: 0.75rem 0.5rem; font-weight: 700; color: var(--primary-light);">{{ course.code }}</td>
+                        <td style="padding: 0.75rem 0.5rem; font-weight: 600; color: var(--text-primary);">{{ course.title }}</td>
+                        <td style="padding: 0.75rem 0.5rem;"><span class="badge badge-admin">{{ course.get_course_type_display }}</span></td>
+                        <td style="padding: 0.75rem 0.5rem; font-weight: 700; color: #34d399;">{{ course.credits }}</td>
+                        <td style="padding: 0.75rem 0.5rem; font-family: monospace; color: #38bdf8;">{{ course.ltp_structure }}</td>
+                        <td style="padding: 0.75rem 0.5rem;">
+                            <select name="faculty_{{ course.code }}" class="form-input" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">
+                                <option value="">-- Unassigned / Coordinator --</option>
+                                {% for fac in faculty_list %}
+                                <option value="{{ fac.id }}">{{ fac.full_name }} ({{ fac.designation }})</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top: var(--space-lg); padding: var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; align-items: center; gap: var(--space-sm);">
+            <input type="checkbox" name="auto_enroll" id="auto_enroll" checked style="width: 18px; height: 18px; accent-color: var(--primary);">
+            <label for="auto_enroll" style="font-size: 0.875rem; color: var(--text-primary); cursor: pointer;">
+                <strong>Automatically bulk-enroll all {{ selected_batch.students.count }} active students</strong> from {{ selected_batch.name }} into these course offerings.
+            </label>
+        </div>
+
+        <div style="margin-top: var(--space-xl); display: flex; justify-content: flex-end; gap: var(--space-md);">
+            <a href="{% url 'portal:department_dashboard' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                Initialize Course Offerings & Enrollments
+            </button>
+        </div>
+        {% else %}
+        <div style="padding: var(--space-xl); text-align: center; color: var(--text-secondary);">
+            No courses defined for Semester {{ selected_batch.current_semester }} under scheme '{{ selected_batch.scheme.name }}'.
+        </div>
+        {% endif %}
+    </div>
+</form>
+{% endif %}
+{% endblock %}

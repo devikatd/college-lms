@@ -1,0 +1,95 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Enter Marks: {{ component.name }} — College LMS{% endblock %}
+
+{% block content %}
+<div class="welcome-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+        <div>
+            <h2 class="welcome-title">{{ component.name }} (Max: {{ component.max_marks }} Marks)</h2>
+            <p class="welcome-subtitle">
+                Course: <strong>{{ offering.course.code }}: {{ offering.course.title }}</strong> &bull; Batch: {{ offering.batch.name }} &bull; Weightage: {{ component.weightage_percentage }}%
+            </p>
+        </div>
+        <div style="display: flex; gap: var(--space-sm);">
+            <a href="{% url 'enrollment:manage_assessments' offering.id %}" class="btn btn-secondary">
+                &larr; Back to Assessments
+            </a>
+        </div>
+    </div>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Marks Roster</h3>
+            <span class="badge badge-faculty">{{ enrollments.count }} Enrolled Students</span>
+        </div>
+
+        <div style="overflow-x: auto; margin-top: var(--space-md);">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--border-subtle); text-align: left; color: var(--text-muted);">
+                        <th style="padding: 0.6rem;">USN / Register No</th>
+                        <th style="padding: 0.6rem;">Student Name</th>
+                        <th style="padding: 0.6rem;">Roll No</th>
+                        <th style="padding: 0.6rem; width: 160px;">Marks Scored (Out of {{ component.max_marks }})</th>
+                        <th style="padding: 0.6rem;">Score (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enr in enrollments %}
+                    <tr style="border-bottom: 1px solid var(--border-subtle);">
+                        <td style="padding: 0.6rem; font-weight: 700; color: var(--text-primary);">{{ enr.student.register_number }}</td>
+                        <td style="padding: 0.6rem; font-weight: 600; color: var(--text-primary);">{{ enr.student.full_name }}</td>
+                        <td style="padding: 0.6rem; color: var(--text-muted);">{{ enr.student.roll_number }}</td>
+                        <td style="padding: 0.6rem;">
+                            <input type="number" step="0.5" min="0" max="{{ component.max_marks }}"
+                                   name="mark_{{ enr.id }}"
+                                   value="{% for k, v in existing_marks.items %}{% if k == enr.id %}{{ v }}{% endif %}{% endfor %}"
+                                   class="form-input score-input"
+                                   style="padding: 0.35rem 0.6rem; font-weight: 700; width: 120px;"
+                                   placeholder="0 - {{ component.max_marks }}">
+                        </td>
+                        <td style="padding: 0.6rem;">
+                            <span class="score-pct" style="font-weight: 600; color: #34d399;">--</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="padding: var(--space-xl); text-align: center; color: var(--text-secondary);">No enrolled students found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top: var(--space-xl); display: flex; justify-content: flex-end; gap: var(--space-md);">
+            <a href="{% url 'enrollment:manage_assessments' offering.id %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                Save & Update Marks
+            </button>
+        </div>
+    </div>
+</form>
+
+<script>
+    const maxMarks = {{ component.max_marks }};
+    document.querySelectorAll('.score-input').forEach(input => {
+        const updatePct = () => {
+            const row = input.closest('tr');
+            const pctSpan = row.querySelector('.score-pct');
+            const val = parseFloat(input.value);
+            if (!isNaN(val) && maxMarks > 0) {
+                const pct = ((val / maxMarks) * 100).toFixed(1);
+                pctSpan.textContent = pct + '%';
+            } else {
+                pctSpan.textContent = '--';
+            }
+        };
+        input.addEventListener('input', updatePct);
+        updatePct();
+    });
+</script>
+{% endblock %}

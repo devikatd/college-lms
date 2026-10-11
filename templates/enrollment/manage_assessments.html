@@ -1,0 +1,95 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}CIE Assessments & Marks — {{ offering.course.code }}{% endblock %}
+
+{% block content %}
+<div class="welcome-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+        <div>
+            <h2 class="welcome-title">{{ offering.course.code }}: Assessments & Grading</h2>
+            <p class="welcome-subtitle">
+                Course: <strong>{{ offering.course.title }}</strong> &bull; Batch: {{ offering.batch.name }} &bull; Continuous Internal Evaluation (CIE)
+            </p>
+        </div>
+        <div style="display: flex; gap: var(--space-sm);">
+            <a href="{% url 'portal:faculty_portal' %}" class="btn btn-secondary">
+                &larr; Faculty Portal
+            </a>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: var(--space-xl);">
+    <!-- Components List -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Configured Assessment Components</h3>
+            <span class="badge badge-faculty">{{ components.count }} Assessments</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: var(--space-md); margin-top: var(--space-md);">
+            {% for comp in components %}
+            <div style="padding: var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h4 style="font-weight: 700; color: var(--text-primary); font-size: 1rem;">{{ comp.name }}</h4>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">
+                            Max Marks: <strong style="color: #34d399;">{{ comp.max_marks }}</strong> &bull; Weightage: {{ comp.weightage_percentage }}%
+                            {% if comp.conducted_date %} &bull; Date: {{ comp.conducted_date }}{% endif %}
+                        </div>
+                    </div>
+                    <span class="badge badge-admin">{{ comp.marks.count }} Scored</span>
+                </div>
+
+                <div style="margin-top: var(--space-md); display: flex; justify-content: flex-end;">
+                    <a href="{% url 'enrollment:enter_marks' comp.id %}" class="btn btn-primary" style="padding: 0.35rem 0.8rem; font-size: 0.8rem;">
+                        Enter / Edit Marks &rarr;
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div style="padding: var(--space-lg); text-align: center; color: var(--text-secondary);">
+                No assessment components configured yet. Add one using the form.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Create New Component Form -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Add Evaluation Component</h3>
+        </div>
+
+        <form method="post" style="margin-top: var(--space-md);">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label" for="name">Assessment Title</label>
+                <input type="text" name="name" id="name" class="form-input" required placeholder="e.g. Internal Test 1 (CIE-1), Lab Assignment, Seminar">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+                <div class="form-group">
+                    <label class="form-label" for="max_marks">Max Marks</label>
+                    <input type="number" step="0.5" name="max_marks" id="max_marks" class="form-input" value="50.0" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="weightage_percentage">Weightage (%)</label>
+                    <input type="number" step="0.5" name="weightage_percentage" id="weightage_percentage" class="form-input" value="25.0" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="conducted_date">Conducted Date</label>
+                <input type="date" name="conducted_date" id="conducted_date" class="form-input">
+            </div>
+
+            <div style="margin-top: var(--space-lg); display: flex; justify-content: flex-end;">
+                <button type="submit" class="btn btn-primary">
+                    Create Assessment Component
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

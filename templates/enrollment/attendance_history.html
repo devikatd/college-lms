@@ -1,0 +1,66 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Attendance Ledger — {{ offering.course.code }}{% endblock %}
+
+{% block content %}
+<div class="welcome-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+        <div>
+            <h2 class="welcome-title">{{ offering.course.code }}: Attendance Ledger</h2>
+            <p class="welcome-subtitle">
+                Course: <strong>{{ offering.course.title }}</strong> &bull; Batch: {{ offering.batch.name }} &bull; Total Conducted Sessions: {{ sessions.count }}
+            </p>
+        </div>
+        <div style="display: flex; gap: var(--space-sm);">
+            <a href="{% url 'enrollment:mark_attendance' offering.id %}" class="btn btn-primary" style="background: #10b981;">
+                + Take New Attendance
+            </a>
+            <a href="{% url 'portal:faculty_portal' %}" class="btn btn-secondary">
+                &larr; Faculty Portal
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Chronological Session Log</h3>
+        <span class="badge badge-faculty">{{ sessions.count }} Recorded Sessions</span>
+    </div>
+
+    <div style="overflow-x: auto; margin-top: var(--space-md);">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border-subtle); text-align: left; color: var(--text-muted);">
+                    <th style="padding: 0.75rem 0.6rem;">Date</th>
+                    <th style="padding: 0.75rem 0.6rem;">Period Slot</th>
+                    <th style="padding: 0.75rem 0.6rem;">Topic Covered</th>
+                    <th style="padding: 0.75rem 0.6rem;">Present / Total</th>
+                    <th style="padding: 0.75rem 0.6rem;">Ratio</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for session in sessions %}
+                <tr style="border-bottom: 1px solid var(--border-subtle);">
+                    <td style="padding: 0.75rem 0.6rem; font-weight: 700; color: var(--text-primary);">{{ session.date }}</td>
+                    <td style="padding: 0.75rem 0.6rem; color: #38bdf8; font-weight: 600;">Slot {{ session.slot }}</td>
+                    <td style="padding: 0.75rem 0.6rem; color: var(--text-secondary);">{{ session.topic_covered|default:"General Lecture" }}</td>
+                    <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: var(--text-primary);">
+                        {{ session.records.all|length }} Records
+                    </td>
+                    <td style="padding: 0.75rem 0.6rem;">
+                        <span class="badge badge-student">Logged</span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="padding: var(--space-xl); text-align: center; color: var(--text-secondary);">
+                        No attendance sessions logged yet. Click "+ Take New Attendance" to record.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

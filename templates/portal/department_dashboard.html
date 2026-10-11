@@ -1,0 +1,138 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Department Dashboard — {{ department.code|default:"Operations" }}{% endblock %}
+
+{% block content %}
+<div class="welcome-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+        <div>
+            <h2 class="welcome-title">Department Operations: {{ department.name|default:"Department Operations" }}</h2>
+            <p class="welcome-subtitle">
+                Department Code: <strong>{{ department.code|default:"N/A" }}</strong> &bull; Scoped Administrative Workstation
+            </p>
+        </div>
+        <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
+            <a href="{% url 'portal:attendance_alerts' %}" class="btn" style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; font-weight: 600;">
+                ⚠️ Shortage Alerts
+            </a>
+            <a href="{% url 'enrollment:generate_offerings' %}" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Initialize Offerings
+            </a>
+            <a href="{% url 'academics:hierarchy_explorer' %}" class="btn btn-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                Curriculum Hierarchy
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Department KPI Metrics -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-xl);">
+    <div class="card" style="border-left: 4px solid var(--primary);">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Programs</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">{{ programs|length }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">Degree Programs</div>
+    </div>
+    <div class="card" style="border-left: 4px solid #06b6d4;">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Active Batches</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">{{ batches|length }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">Ongoing Cohorts</div>
+    </div>
+    <div class="card" style="border-left: 4px solid #10b981;">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Students</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">{{ students_count }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">Enrolled in Dept</div>
+    </div>
+    <div class="card" style="border-left: 4px solid #f59e0b;">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Faculty</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">{{ faculty_members|length }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">Teaching Staff</div>
+    </div>
+</div>
+
+<!-- Active Cohorts & Promotion Engine -->
+<div class="card" style="margin-bottom: var(--space-xl);">
+    <div class="card-header">
+        <h3 class="card-title">Student Batches & Cohort Progression</h3>
+        <span class="badge badge-admin">Workflow Engine</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-md);">
+        {% for b in batches %}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); flex-wrap: wrap; gap: var(--space-sm);">
+            <div>
+                <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">
+                    {{ b.name }}
+                    {% if b.is_graduated %}
+                        <span class="badge badge-admin" style="margin-left: 0.5rem;">Graduated</span>
+                    {% else %}
+                        <span class="badge badge-student" style="margin-left: 0.5rem;">Active &bull; Sem {{ b.current_semester }}</span>
+                    {% endif %}
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+                    Program: {{ b.program.name }} &bull; Scheme: {{ b.scheme.code }} &bull; Students: {{ b.students.count }}
+                </div>
+            </div>
+            <div style="display: flex; gap: var(--space-sm); align-items: center;">
+                {% if not b.is_graduated %}
+                <a href="{% url 'enrollment:batch_promote' b.id %}" class="btn btn-secondary" style="padding: 0.35rem 0.8rem; font-size: 0.8rem;">
+                    Promote Semester &rarr;
+                </a>
+                <a href="{% url 'enrollment:generate_offerings' %}?batch_id={{ b.id }}" class="btn btn-primary" style="padding: 0.35rem 0.8rem; font-size: 0.8rem;">
+                    Offerings & Enroll
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <p style="color: var(--text-muted); font-size: 0.875rem;">No batches registered under this department.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: var(--space-lg);">
+    <!-- Programs & Regulations -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Degree Programs</h3>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-md);">
+            {% for prog in programs %}
+            <div style="padding: var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 700; color: var(--text-primary);">{{ prog.name }}</span>
+                    <span class="badge badge-dept">{{ prog.get_degree_type_display }}</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+                    Code: {{ prog.code }} &bull; Duration: {{ prog.duration_years }} Years ({{ prog.total_semesters }} Semesters)
+                </div>
+            </div>
+            {% empty %}
+            <p style="color: var(--text-muted); font-size: 0.875rem;">No programs registered.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Faculty Roster -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Academic Staff & Faculty</h3>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-md);">
+            {% for faculty in faculty_members %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-sm) var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem;">{{ faculty.full_name }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ faculty.designation }} &bull; ID: {{ faculty.employee_id }}</div>
+                </div>
+                <div>
+                    <span class="badge badge-faculty">{{ faculty.qualification|default:"Faculty" }}</span>
+                </div>
+            </div>
+            {% empty %}
+            <p style="color: var(--text-muted); font-size: 0.875rem;">No faculty registered under this department.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

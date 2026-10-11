@@ -1,0 +1,114 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Executive Admin Dashboard — College LMS{% endblock %}
+
+{% block content %}
+<div class="welcome-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+        <div>
+            <h2 class="welcome-title">Welcome, {{ user.get_full_name|default:user.username }}!</h2>
+            <p class="welcome-subtitle">
+                Institutional Dashboard &bull; <strong>{{ college.name|default:"Apex College" }}</strong> [Code: {{ college.code|default:"CAMPUS" }}]
+            </p>
+        </div>
+        <div style="display: flex; gap: var(--space-sm);">
+            <a href="{% url 'portal:attendance_alerts' %}" class="btn" style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; font-weight: 600;">
+                ⚠️ Shortage Alerts
+            </a>
+            <a href="{% url 'academics:hierarchy_explorer' %}" class="btn btn-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                Explore Hierarchy
+            </a>
+            <a href="/admin/" target="_blank" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Admin Workstation
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ── Metric Cards Grid ─────────────────────────────────────────── -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-xl);">
+    <div class="card" style="border-left: 4px solid var(--primary);">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Departments</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">{{ department_count }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">Academic Divisions</div>
+    </div>
+
+    <div class="card" style="border-left: 4px solid #06b6d4;">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Degree Programs</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">{{ program_count }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">UG, PG & Doctoral</div>
+    </div>
+
+    <div class="card" style="border-left: 4px solid #8b5cf6;">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Courses & Syllabi</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">{{ course_count }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">{{ scheme_count }} Active Regulations</div>
+    </div>
+
+    <div class="card" style="border-left: 4px solid #10b981;">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Student Batches</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">{{ batch_count }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">{{ student_count }} Active Students</div>
+    </div>
+
+    <div class="card" style="border-left: 4px solid #f59e0b;">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Faculty Members</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">{{ faculty_count }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">{{ offerings_count }} Course Offerings</div>
+    </div>
+</div>
+
+<!-- ── Two Column Layout: Departments & Cohorts ──────────────────── -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: var(--space-lg);">
+    <!-- Department Overview -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Academic Departments</h3>
+            <a href="/admin/academics/department/" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">Manage</a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-md);">
+            {% for dept in departments %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-sm) var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <div>
+                    <span style="font-weight: 700; color: var(--text-primary);">{{ dept.name }}</span>
+                    <span style="font-size: 0.75rem; color: #818cf8; margin-left: 0.5rem; font-weight: 600;">[{{ dept.code }}]</span>
+                </div>
+                <div style="display: flex; gap: var(--space-xs);">
+                    <span class="badge badge-dept">{{ dept.programs.count }} Prog</span>
+                    <span class="badge badge-faculty">{{ dept.faculty_members.count }} Faculty</span>
+                </div>
+            </div>
+            {% empty %}
+            <p style="color: var(--text-muted); font-size: 0.875rem;">No departments configured.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Active Cohorts / Batches -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Active Cohorts & Progression</h3>
+            <a href="/admin/academics/batch/" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">View All</a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-md);">
+            {% for batch in recent_batches %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-sm) var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <div>
+                    <div style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem;">{{ batch.name }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                        {{ batch.program.code }} &bull; Sem {{ batch.current_semester }} &bull; {{ batch.scheme.code }}
+                    </div>
+                </div>
+                <div>
+                    <span class="badge badge-student">{{ batch.students.count }} Enrolled</span>
+                </div>
+            </div>
+            {% empty %}
+            <p style="color: var(--text-muted); font-size: 0.875rem;">No batches initialized.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
