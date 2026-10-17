@@ -130,6 +130,7 @@
                 <a href="{% url 'enrollment:export_roster_csv' off.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">Export Roster CSV</a>
                 <a href="{% url 'enrollment:attendance_history' off.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">Attendance</a>
                 <a href="{% url 'enrollment:manage_assessments' off.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">Assessments</a>
+                <a href="{% url 'enrollment:enter_grades' off.id %}" class="btn btn-primary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">Grades</a>
             </div>
         </div>
         {% empty %}

@@ -1,0 +1,131 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Award Grades: {{ offering.course.code }} — College LMS{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 0 auto;">
+    <!-- Welcome Header -->
+    <div class="welcome-card" style="margin-bottom: var(--space-xl);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                    <span class="badge badge-dept">{{ offering.course.code }}</span>
+                    <span class="badge badge-faculty">{{ offering.course.credits }} Credits</span>
+                    <span class="badge badge-student">Section {{ offering.section }}</span>
+                </div>
+                <h2 class="welcome-title">Final Course Grade Evaluation</h2>
+                <p class="welcome-subtitle">
+                    Course: <strong>{{ offering.course.title }}</strong> &bull; Batch: <strong>{{ offering.batch.name }}</strong> &bull; Academic Term: <strong>{{ offering.academic_year }} ({{ offering.term }})</strong>
+                </p>
+            </div>
+            <div style="display: flex; gap: var(--space-sm);">
+                <a href="{% url 'portal:faculty_portal' %}" class="btn btn-secondary">
+                    &larr; Faculty Portal
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grade Evaluation Form -->
+    <form method="post">
+        {% csrf_token %}
+        <div class="card" style="padding: 0; overflow: hidden; margin-bottom: var(--space-xl);">
+            <div style="padding: var(--space-md) var(--space-lg); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-sm);">
+                <div>
+                    <h3 class="card-title" style="margin: 0;">Enrolled Student Grade Roster</h3>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Assign final qualifying letter grades based on CIE evaluations and semester end performance.</span>
+                </div>
+                <span class="badge badge-faculty">{{ enrollments.count }} Students Enrolled</span>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-subtle); text-align: left; color: var(--text-muted); background: rgba(15, 23, 42, 0.4);">
+                            <th style="padding: var(--space-md);">USN / Register No</th>
+                            <th style="padding: var(--space-md);">Student Name</th>
+                            <th style="padding: var(--space-md);">Roll No</th>
+                            <th style="padding: var(--space-md); text-align: center;">Attendance</th>
+                            <th style="padding: var(--space-md); text-align: center; width: 180px;">Awarded Grade</th>
+                            <th style="padding: var(--space-md); text-align: center;">Grade Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for enr in enrollments %}
+                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                            <td style="padding: var(--space-md); font-family: monospace; font-weight: 700; color: var(--primary);">
+                                {{ enr.student.register_number }}
+                            </td>
+                            <td style="padding: var(--space-md); font-weight: 600; color: var(--text-primary);">
+                                {{ enr.student.full_name }}
+                            </td>
+                            <td style="padding: var(--space-md); color: var(--text-muted);">
+                                {{ enr.student.roll_number|default:"—" }}
+                            </td>
+                            <td style="padding: var(--space-md); text-align: center;">
+                                <span class="badge" style="{% if enr.attendance_percentage < 75 %}background: rgba(239, 68, 68, 0.15); color: #f87171; font-weight: 700;{% else %}background: rgba(16, 185, 129, 0.15); color: #34d399;{% endif %}">
+                                    {{ enr.attendance_percentage }}%
+                                </span>
+                            </td>
+                            <td style="padding: var(--space-md); text-align: center;">
+                                <select name="grade_{{ enr.id }}" class="form-input grade-select" style="padding: 0.35rem 0.75rem; font-weight: 700; text-align: center; border-radius: var(--radius-sm);" onchange="updatePoints(this)">
+                                    <option value="" {% if not enr.grade %}selected{% endif %}>— Pending —</option>
+                                    {% for g in valid_grades %}
+                                    <option value="{{ g }}" {% if enr.grade == g %}selected{% endif %}>{{ g }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td style="padding: var(--space-md); text-align: center; font-family: monospace; font-weight: 700; color: var(--text-secondary);" class="points-cell">
+                                {% if enr.grade == "O" or enr.grade == "A+" %}10.0
+                                {% elif enr.grade == "A" %}9.0
+                                {% elif enr.grade == "B+" %}8.0
+                                {% elif enr.grade == "B" %}7.0
+                                {% elif enr.grade == "C+" %}6.5
+                                {% elif enr.grade == "C" %}6.0
+                                {% elif enr.grade == "D" %}5.0
+                                {% elif enr.grade == "P" %}4.0
+                                {% elif enr.grade == "F" %}0.0
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="padding: var(--space-2xl); text-align: center; color: var(--text-muted);">
+                                No students currently enrolled in this course offering.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="padding: var(--space-lg); border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md); background: rgba(15, 23, 42, 0.3);">
+                <div style="font-size: 0.85rem; color: var(--text-muted); max-width: 500px;">
+                    <strong>Academic Policy Note:</strong> Assigned grades immediately calculate into the student's term SGPA and cumulative CGPA on their Official Academic Transcript.
+                </div>
+                <div style="display: flex; gap: var(--space-sm);">
+                    <a href="{% url 'portal:faculty_portal' %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        Submit & Save Final Grades
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+const pointsMap = {
+    'O': '10.0', 'A+': '10.0', 'A': '9.0',
+    'B+': '8.0', 'B': '7.0', 'C+': '6.5',
+    'C': '6.0', 'D': '5.0', 'P': '4.0', 'F': '0.0'
+};
+function updatePoints(selectElem) {
+    const row = selectElem.closest('tr');
+    const cell = row.querySelector('.points-cell');
+    const val = selectElem.value;
+    cell.textContent = pointsMap[val] || '—';
+}
+</script>
+{% endblock %}

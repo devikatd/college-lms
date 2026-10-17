@@ -391,3 +391,47 @@ def enter_marks_view(request, component_id):
     }
     return render(request, "enrollment/enter_marks.html", context)
 
+
+@login_required
+@faculty_required
+def enter_course_grades_view(request, offering_id):
+    """
+    Workstation for faculty/instructors to award official final letter grades for a course offering.
+    Directly updates StudentCourseEnrollment.grade, reflecting immediately on academic transcripts.
+    """
+    offering = get_object_or_404(
+        CourseOffering.objects.select_related("course", "batch", "faculty__user"),
+        pk=offering_id,
+    )
+
+    if request.user.is_faculty and not (request.user.is_college_admin or request.user.is_dept_admin):
+        if not offering.faculty or offering.faculty.user != request.user:
+            return HttpResponseForbidden("Access Denied: You are not assigned to this course offering.")
+
+    enrollments = offering.enrollments.select_related("student__user").order_by("student__register_number")
+
+    VALID_GRADES = ["O", "A+", "A", "B+", "B", "C+", "C", "D", "P", "F"]
+
+    if request.method == "POST":
+        updated_count = 0
+        for enr in enrollments:
+            new_grade = request.POST.get(f"grade_{enr.id}", "").strip().upper()
+            if new_grade in VALID_GRADES or new_grade == "":
+                enr.grade = new_grade
+                enr.save(update_fields=["grade"])
+                updated_count += 1
+
+        messages.success(request, f"Updated final grades for {updated_count} students in {offering.course.code}.")
+        if request.user.is_faculty and not request.user.is_college_admin:
+            return redirect("portal:faculty_portal")
+        return redirect("academics:batch_detail", batch_id=offering.batch.id)
+
+    context = {
+        "page_title": f"Grade Awarding & Final Evaluation — {offering.course.code}",
+        "offering": offering,
+        "enrollments": enrollments,
+        "valid_grades": VALID_GRADES,
+    }
+    return render(request, "enrollment/enter_grades.html", context)
+
+

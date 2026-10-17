@@ -24,4 +24,8 @@ urlpatterns = [
     # Assessment & marks management
     path("offering/<uuid:offering_id>/assessments/", views.manage_assessments_view, name="manage_assessments"),
     path("assessment/<uuid:component_id>/marks/", views.enter_marks_view, name="enter_marks"),
+
+    # Final Course Letter Grade Evaluation
+    path("offering/<uuid:offering_id>/grades/", views.enter_course_grades_view, name="enter_grades"),
 ]
+

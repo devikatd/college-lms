@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}500 — Server Error | College LMS{% endblock %}
+
+{% block content %}
+<div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: var(--space-xl);">
+    <div class="card" style="max-width: 540px; width: 100%; text-align: center; padding: var(--space-2xl);">
+        <div style="width: 72px; height: 72px; border-radius: 50%; background: rgba(245, 158, 11, 0.12); color: #f59e0b; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-lg);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <span style="font-size: 3rem; font-weight: 800; color: #f59e0b; font-family: monospace; line-height: 1; display: block; margin-bottom: 0.5rem;">500</span>
+        <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem 0;">Internal Server Error</h1>
+        <p style="color: var(--text-secondary); margin: 0 0 var(--space-xl) 0; font-size: 0.95rem; line-height: 1.6;">
+            An unexpected error occurred while executing this academic operation. The event has been logged for technical review.
+        </p>
+
+        <div style="display: flex; justify-content: center; gap: var(--space-md); flex-wrap: wrap;">
+            <a href="/" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Return to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

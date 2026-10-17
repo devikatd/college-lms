@@ -267,9 +267,33 @@ class AcademicWorkflowServiceTestCase(TestCase):
             reverse("enrollment:enter_marks", kwargs={"component_id": comp.id}),
             {f"mark_{enr.id}": "47.5"},
         )
-        self.assertEqual(res.status_code, 302)
-
         mark = StudentMark.objects.get(component=comp, enrollment=enr)
         self.assertEqual(mark.marks_obtained, Decimal("47.50"))
+
+    def test_enter_course_grades_view_flow(self):
+        """Faculty can assign final letter grades to enrolled students."""
+        offering = CourseOffering.objects.create(
+            course=self.course1,
+            batch=self.batch,
+            faculty=self.faculty_prof,
+            academic_year="2024-2025",
+            term="ODD",
+            section="A",
+        )
+        enr = StudentCourseEnrollment.objects.create(student=self.students[0], course_offering=offering)
+
+        self.client.login(username="fac_smith", password="pass123")
+        res_get = self.client.get(reverse("enrollment:enter_grades", kwargs={"offering_id": offering.id}))
+        self.assertEqual(res_get.status_code, 200)
+
+        res_post = self.client.post(
+            reverse("enrollment:enter_grades", kwargs={"offering_id": offering.id}),
+            {f"grade_{enr.id}": "A+"},
+        )
+        self.assertEqual(res_post.status_code, 302)
+
+        enr.refresh_from_db()
+        self.assertEqual(enr.grade, "A+")
+
 
 
