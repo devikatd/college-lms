@@ -1,0 +1,145 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Academic Dossier: {{ student.full_name }} — College LMS{% endblock %}
+
+{% block content %}
+<div class="welcome-card" style="margin-bottom: var(--space-xl);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+        <div style="display: flex; align-items: center; gap: var(--space-md);">
+            <div style="width: 64px; height: 64px; border-radius: var(--radius-full); background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; font-weight: 800; color: white; border: 3px solid rgba(255,255,255,0.2);">
+                {{ student.user.first_name|default:student.user.username|make_list|first|upper }}
+            </div>
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                    <span class="badge badge-dept">{{ student.register_number }}</span>
+                    <span class="badge badge-student">{{ student.get_status_display }}</span>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Roll: {{ student.roll_number|default:"N/A" }}</span>
+                </div>
+                <h2 class="welcome-title">{{ student.full_name }}</h2>
+                <p class="welcome-subtitle">
+                    {{ student.batch.program.name }} &bull; {{ student.batch.name }} &bull; Semester {{ student.batch.current_semester }}
+                </p>
+            </div>
+        </div>
+        <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
+            {% if user.is_college_admin or user.is_dept_admin %}
+            <a href="{% url 'academics:student_edit' student.id %}" class="btn btn-primary">
+                Edit Profile
+            </a>
+            <a href="{% url 'academics:student_list' %}" class="btn btn-secondary">
+                &larr; Student Directory
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Student Metadata Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-xl);">
+    <div class="card">
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Official Email</div>
+        <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-top: 4px; word-break: break-all;">
+            {{ student.user.email|default:"Not Provided" }}
+        </div>
+    </div>
+    <div class="card">
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Emergency Contact</div>
+        <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-top: 4px;">
+            {{ student.emergency_contact|default:"Not Recorded" }}
+        </div>
+    </div>
+    <div class="card">
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Blood Group</div>
+        <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-top: 4px;">
+            {{ student.blood_group|default:"-" }}
+        </div>
+    </div>
+    <div class="card">
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Active Registered Credits</div>
+        <div style="font-size: 1.5rem; font-weight: 800; color: #818cf8; margin-top: 4px;">
+            {{ total_credits }}
+        </div>
+    </div>
+</div>
+
+<!-- Enrolled Subjects & Real-Time Performance Dossier -->
+<div class="card" style="padding: 0; overflow: hidden; margin-bottom: var(--space-xl);">
+    <div style="padding: var(--space-md) var(--space-lg); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title" style="margin: 0;">Current Semester Registered Courses & Attendance</h3>
+        <span class="badge badge-dept">{{ enrollments.count }} Enrolled Subjects</span>
+    </div>
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); background: rgba(15, 23, 42, 0.4);">
+                    <th style="padding: var(--space-md);">Code</th>
+                    <th style="padding: var(--space-md);">Course Title</th>
+                    <th style="padding: var(--space-md);">Instructor</th>
+                    <th style="padding: var(--space-md);">Section</th>
+                    <th style="padding: var(--space-md);">Credits</th>
+                    <th style="padding: var(--space-md);">Attendance</th>
+                    <th style="padding: var(--space-md);">CIE Internal Marks</th>
+                    <th style="padding: var(--space-md); text-align: right;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enr in enrollments %}
+                <tr style="border-bottom: 1px solid var(--border-subtle);">
+                    <td style="padding: var(--space-md); font-weight: 700; color: #818cf8;">
+                        <code>{{ enr.course_offering.course.code }}</code>
+                    </td>
+                    <td style="padding: var(--space-md); font-weight: 600; color: var(--text-primary);">
+                        <a href="{% url 'academics:course_detail' enr.course_offering.course.id %}" style="color: inherit; text-decoration: none;">
+                            {{ enr.course_offering.course.title }}
+                        </a>
+                    </td>
+                    <td style="padding: var(--space-md); color: var(--text-secondary); font-size: 0.85rem;">
+                        {{ enr.course_offering.faculty.full_name|default:"Unassigned" }}
+                    </td>
+                    <td style="padding: var(--space-md); color: var(--text-muted);">
+                        Sec {{ enr.course_offering.section }}
+                    </td>
+                    <td style="padding: var(--space-md); font-weight: 700; color: var(--text-primary);">
+                        {{ enr.course_offering.course.credits }}
+                    </td>
+                    <td style="padding: var(--space-md);">
+                        {% if enr.attendance_percentage < 75 %}
+                        <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 700;">
+                            ⚠️ {{ enr.attendance_percentage }}% (Shortage)
+                        </span>
+                        {% elif enr.attendance_percentage < 80 %}
+                        <span class="badge badge-faculty" style="font-weight: 700;">
+                            {{ enr.attendance_percentage }}% (Warning)
+                        </span>
+                        {% else %}
+                        <span class="badge badge-student" style="font-weight: 700;">
+                            {{ enr.attendance_percentage }}%
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: var(--space-md);">
+                        {% for mark in enr.marks.all %}
+                        <div style="font-size: 0.8rem; margin-bottom: 2px;">
+                            <span style="color: var(--text-muted);">{{ mark.component.name }}:</span>
+                            <strong style="color: var(--text-primary);">{{ mark.marks_obtained }} / {{ mark.component.max_marks }}</strong>
+                        </div>
+                        {% empty %}
+                        <span style="color: var(--text-muted); font-size: 0.8rem;">Pending evaluation</span>
+                        {% endfor %}
+                    </td>
+                    <td style="padding: var(--space-md); text-align: right;">
+                        <span class="badge badge-student">{{ enr.get_status_display }}</span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="padding: var(--space-2xl); text-align: center; color: var(--text-muted);">
+                        Student is not currently enrolled in any active course offerings.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

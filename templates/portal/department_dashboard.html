@@ -12,57 +12,77 @@
             </p>
         </div>
         <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
-            <a href="{% url 'portal:attendance_alerts' %}" class="btn" style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; font-weight: 600;">
+            <a href="{% url 'portal:attendance_alerts' %}" class="btn" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); font-weight: 600;">
                 ⚠️ Shortage Alerts
             </a>
             <a href="{% url 'enrollment:generate_offerings' %}" class="btn btn-primary">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Initialize Offerings
             </a>
+            <a href="{% url 'academics:scheme_clone' %}" class="btn btn-secondary">
+                Clone Scheme
+            </a>
             <a href="{% url 'academics:hierarchy_explorer' %}" class="btn btn-secondary">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                Curriculum Hierarchy
+                Curriculum
             </a>
+        </div>
+    </div>
+</div>
+
+<!-- Department Quick Actions -->
+<div class="card" style="margin-bottom: var(--space-xl); padding: var(--space-md) var(--space-lg); background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-subtle);">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-md);">
+        <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Department Management:</span>
+        <div style="display: flex; gap: var(--space-xs); flex-wrap: wrap;">
+            <a href="{% url 'academics:program_create' %}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">+ Add Program</a>
+            <a href="{% url 'academics:scheme_create' %}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">+ Add Scheme</a>
+            <a href="{% url 'academics:course_create' %}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">+ Add Course</a>
+            <a href="{% url 'academics:batch_create' %}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">+ Add Batch</a>
+            <a href="{% url 'academics:student_create' %}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">Register Student</a>
+            <a href="{% url 'academics:faculty_create' %}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">+ Add Faculty</a>
         </div>
     </div>
 </div>
 
 <!-- Department KPI Metrics -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-xl);">
-    <div class="card" style="border-left: 4px solid var(--primary);">
+    <a href="{% url 'academics:program_list' %}" class="card" style="border-left: 4px solid var(--primary); text-decoration: none; display: block;">
         <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Programs</div>
         <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">{{ programs|length }}</div>
-        <div style="font-size: 0.75rem; color: var(--text-secondary);">Degree Programs</div>
-    </div>
-    <div class="card" style="border-left: 4px solid #06b6d4;">
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">Degree Programs &rarr;</div>
+    </a>
+    <a href="{% url 'academics:batch_list' %}" class="card" style="border-left: 4px solid #06b6d4; text-decoration: none; display: block;">
         <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Active Batches</div>
         <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">{{ batches|length }}</div>
-        <div style="font-size: 0.75rem; color: var(--text-secondary);">Ongoing Cohorts</div>
-    </div>
-    <div class="card" style="border-left: 4px solid #10b981;">
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">Ongoing Cohorts &rarr;</div>
+    </a>
+    <a href="{% url 'academics:student_list' %}" class="card" style="border-left: 4px solid #10b981; text-decoration: none; display: block;">
         <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Students</div>
         <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">{{ students_count }}</div>
-        <div style="font-size: 0.75rem; color: var(--text-secondary);">Enrolled in Dept</div>
-    </div>
-    <div class="card" style="border-left: 4px solid #f59e0b;">
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">Enrolled in Dept &rarr;</div>
+    </a>
+    <a href="{% url 'academics:faculty_list' %}" class="card" style="border-left: 4px solid #f59e0b; text-decoration: none; display: block;">
         <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Faculty</div>
         <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">{{ faculty_members|length }}</div>
-        <div style="font-size: 0.75rem; color: var(--text-secondary);">Teaching Staff</div>
-    </div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">Teaching Staff &rarr;</div>
+    </a>
 </div>
 
 <!-- Active Cohorts & Promotion Engine -->
 <div class="card" style="margin-bottom: var(--space-xl);">
     <div class="card-header">
         <h3 class="card-title">Student Batches & Cohort Progression</h3>
-        <span class="badge badge-admin">Workflow Engine</span>
+        <a href="{% url 'academics:batch_create' %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">+ New Batch</a>
     </div>
     <div style="display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-md);">
         {% for b in batches %}
         <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); flex-wrap: wrap; gap: var(--space-sm);">
             <div>
                 <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">
-                    {{ b.name }}
+                    <a href="{% url 'academics:batch_detail' b.id %}" style="color: inherit; text-decoration: none;">
+                        {{ b.name }}
+                    </a>
                     {% if b.is_graduated %}
                         <span class="badge badge-admin" style="margin-left: 0.5rem;">Graduated</span>
                     {% else %}
@@ -74,6 +94,9 @@
                 </div>
             </div>
             <div style="display: flex; gap: var(--space-sm); align-items: center;">
+                <a href="{% url 'academics:batch_detail' b.id %}" class="btn btn-secondary" style="padding: 0.35rem 0.8rem; font-size: 0.8rem;">
+                    View Roster
+                </a>
                 {% if not b.is_graduated %}
                 <a href="{% url 'enrollment:batch_promote' b.id %}" class="btn btn-secondary" style="padding: 0.35rem 0.8rem; font-size: 0.8rem;">
                     Promote Semester &rarr;
@@ -95,16 +118,22 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Degree Programs</h3>
+            <a href="{% url 'academics:program_create' %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">+ New</a>
         </div>
         <div style="display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-md);">
             {% for prog in programs %}
-            <div style="padding: var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 700; color: var(--text-primary);">{{ prog.name }}</span>
-                    <span class="badge badge-dept">{{ prog.get_degree_type_display }}</span>
+            <div style="padding: var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <a href="{% url 'academics:program_detail' prog.id %}" style="font-weight: 700; color: var(--text-primary); text-decoration: none;">
+                        {{ prog.name }}
+                    </a>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+                        Code: <code>{{ prog.code }}</code> &bull; {{ prog.duration_years }} Years ({{ prog.total_semesters }} Semesters)
+                    </div>
                 </div>
-                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
-                    Code: {{ prog.code }} &bull; Duration: {{ prog.duration_years }} Years ({{ prog.total_semesters }} Semesters)
+                <div style="display: flex; gap: var(--space-xs); align-items: center;">
+                    <span class="badge badge-dept">{{ prog.get_degree_type_display }}</span>
+                    <a href="{% url 'academics:program_detail' prog.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.45rem;">&rarr;</a>
                 </div>
             </div>
             {% empty %}
@@ -117,16 +146,20 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Academic Staff & Faculty</h3>
+            <a href="{% url 'academics:faculty_create' %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">+ New</a>
         </div>
         <div style="display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-md);">
             {% for faculty in faculty_members %}
             <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-sm) var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
                 <div>
-                    <div style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem;">{{ faculty.full_name }}</div>
+                    <a href="{% url 'academics:faculty_detail' faculty.id %}" style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem; text-decoration: none;">
+                        {{ faculty.full_name }}
+                    </a>
                     <div style="font-size: 0.75rem; color: var(--text-muted);">{{ faculty.designation }} &bull; ID: {{ faculty.employee_id }}</div>
                 </div>
-                <div>
+                <div style="display: flex; gap: var(--space-xs); align-items: center;">
                     <span class="badge badge-faculty">{{ faculty.qualification|default:"Faculty" }}</span>
+                    <a href="{% url 'academics:faculty_detail' faculty.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.45rem;">&rarr;</a>
                 </div>
             </div>
             {% empty %}

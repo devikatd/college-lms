@@ -1,0 +1,67 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}{{ page_title }} — College LMS{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+        <div>
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">{{ page_title }}</h2>
+            <p style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 2px;">
+                Complete the fields below to {{ action|lower }} this academic entity.
+            </p>
+        </div>
+        {% if cancel_url %}
+        <a href="{{ cancel_url }}" class="btn btn-secondary">
+            &larr; Cancel / Back
+        </a>
+        {% endif %}
+    </div>
+
+    {% if form.errors %}
+    <div style="padding: var(--space-md); background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); border-radius: var(--radius-md); margin-bottom: var(--space-lg); color: #fca5a5;">
+        <div style="font-weight: 700; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Please correct the errors below:
+        </div>
+        <ul style="margin-left: 1.5rem; font-size: 0.875rem;">
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                    <li><strong>{{ field|title }}:</strong> {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="card" style="padding: var(--space-xl);">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div style="display: flex; flex-direction: column; gap: var(--space-md);">
+                {% for field in form %}
+                <div class="form-group">
+                    <label class="form-label" for="{{ field.id_for_label }}">
+                        {{ field.label }}
+                        {% if field.field.required %}<span style="color: var(--danger);">*</span>{% endif %}
+                    </label>
+                    {{ field }}
+                    {% if field.help_text %}
+                    <div class="form-hint">{{ field.help_text }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <div style="display: flex; justify-content: flex-end; gap: var(--space-sm); margin-top: var(--space-lg); padding-top: var(--space-md); border-top: 1px solid var(--border-subtle);">
+                    {% if cancel_url %}
+                    <a href="{{ cancel_url }}" class="btn btn-secondary">Cancel</a>
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.75rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        Save {{ action }}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

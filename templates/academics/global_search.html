@@ -1,0 +1,141 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Search Academic Records — College LMS{% endblock %}
+
+{% block content %}
+<div class="welcome-card" style="margin-bottom: var(--space-xl);">
+    <h2 class="welcome-title">Centralized Academic Record Finder</h2>
+    <p class="welcome-subtitle">
+        Instant lookup across Students, Courses & Syllabi, Cohort Batches, Degree Programs, and Faculty Members.
+    </p>
+
+    <form method="get" action="{% url 'academics:global_search' %}" style="display: flex; gap: var(--space-sm); margin-top: var(--space-md); max-width: 650px;">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search by USN, roll number, course code, student name, instructor..." class="form-input" autofocus style="background: rgba(15, 23, 42, 0.8);">
+        <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.5rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Search
+        </button>
+    </form>
+</div>
+
+{% if query %}
+<div style="margin-bottom: var(--space-lg); display: flex; justify-content: space-between; align-items: center;">
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">
+        Search results for "<span style="color: #818cf8;">{{ query }}</span>" ({{ results.total_count }} found)
+    </h3>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: var(--space-xl);">
+
+    <!-- Students Results -->
+    {% if results.students %}
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Students ({{ results.students|length }})</h3>
+            <a href="{% url 'academics:student_list' %}?q={{ query }}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">View All in Directory</a>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-sm); margin-top: var(--space-md);">
+            {% for s in results.students %}
+            <div style="padding: var(--space-sm) var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <a href="{% url 'academics:student_detail' s.id %}" style="font-weight: 700; color: var(--text-primary);">{{ s.full_name }}</a>
+                    <div style="font-size: 0.75rem; color: #818cf8; font-family: var(--font-mono);">{{ s.register_number }} &bull; {{ s.batch.name }}</div>
+                </div>
+                <a href="{% url 'academics:student_detail' s.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">Dossier &rarr;</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Courses Results -->
+    {% if results.courses %}
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Courses & Syllabi ({{ results.courses|length }})</h3>
+            <a href="{% url 'academics:course_list' %}?q={{ query }}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">View in Directory</a>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-sm); margin-top: var(--space-md);">
+            {% for c in results.courses %}
+            <div style="padding: var(--space-sm) var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-family: var(--font-mono); color: #818cf8; font-weight: 700; font-size: 0.8rem;">{{ c.code }}</span>
+                    <a href="{% url 'academics:course_detail' c.id %}" style="display: block; font-weight: 600; color: var(--text-primary);">{{ c.title }}</a>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ c.semester.scheme.program.code }} &bull; {{ c.credits }} Credits</div>
+                </div>
+                <a href="{% url 'academics:course_detail' c.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">Details &rarr;</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Batches Results -->
+    {% if results.batches %}
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Student Batches & Cohorts ({{ results.batches|length }})</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-sm); margin-top: var(--space-md);">
+            {% for b in results.batches %}
+            <div style="padding: var(--space-sm) var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <a href="{% url 'academics:batch_detail' b.id %}" style="font-weight: 700; color: var(--text-primary);">{{ b.name }}</a>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ b.program.name }} &bull; Sem {{ b.current_semester }}</div>
+                </div>
+                <a href="{% url 'academics:batch_detail' b.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">Cohort Roster &rarr;</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Faculty Results -->
+    {% if results.faculty %}
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Academic Staff & Faculty ({{ results.faculty|length }})</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-sm); margin-top: var(--space-md);">
+            {% for f in results.faculty %}
+            <div style="padding: var(--space-sm) var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <a href="{% url 'academics:faculty_detail' f.id %}" style="font-weight: 700; color: var(--text-primary);">{{ f.full_name }}</a>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ f.designation }} &bull; {{ f.department.code }}</div>
+                </div>
+                <a href="{% url 'academics:faculty_detail' f.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">Profile &rarr;</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Programs Results -->
+    {% if results.programs %}
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Degree Programs ({{ results.programs|length }})</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-sm); margin-top: var(--space-md);">
+            {% for p in results.programs %}
+            <div style="padding: var(--space-sm) var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <a href="{% url 'academics:program_detail' p.id %}" style="font-weight: 700; color: var(--text-primary);">{{ p.name }}</a>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Code: {{ p.code }} &bull; {{ p.department.code }}</div>
+                </div>
+                <a href="{% url 'academics:program_detail' p.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">Program &rarr;</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if results.total_count == 0 %}
+    <div class="card" style="text-align: center; padding: var(--space-2xl);">
+        <p style="color: var(--text-muted); font-size: 1rem;">No matching academic records found for "{{ query }}".</p>
+    </div>
+    {% endif %}
+
+</div>
+{% endif %}
+{% endblock %}

@@ -13,6 +13,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db.models import ProtectedError
 from django.test import TestCase
+from django.urls import reverse
 
 from academics.models import (
     College,
@@ -249,3 +250,161 @@ class AcademicRelationalIntegrityTestCase(TestCase):
                 student=student_profile,
                 course_offering=offering,
             )
+
+
+class AcademicManagementWorkstationTestCase(TestCase):
+    """Automated tests for CRUD workstations, directory views, and search."""
+
+    def setUp(self):
+        from django.test import Client
+        self.client = Client()
+
+        self.college = College.objects.create(code="RVCE", name="R.V. College of Engineering")
+        self.dept = Department.objects.create(college=self.college, code="CSE", name="Computer Science & Engineering")
+        self.prog = Program.objects.create(
+            department=self.dept, code="BTECH-CS", name="B.Tech Computer Science", duration_years=4, total_semesters=8
+        )
+        self.scheme = Scheme.objects.create(
+            program=self.prog, code="SCH2024", name="2024 Scheme", effective_year=2024, total_credits_required=Decimal("160.00")
+        )
+        self.sem1 = Semester.objects.create(scheme=self.scheme, semester_number=1, semester_type="ODD")
+        self.course1 = Course.objects.create(
+            semester=self.sem1, code="CS101", title="Intro to Computing", credits=Decimal("4.00")
+        )
+        self.batch = Batch.objects.create(
+            program=self.prog, scheme=self.scheme, name="2024 Batch A", admission_year=2024, graduation_year=2028, current_semester=1
+        )
+
+        # Users
+        self.college_admin = User.objects.create_user(
+            "admin_user", "admin@rvce.edu.in", "pass123", role=User.Role.COLLEGE_ADMIN, is_staff=True, is_superuser=True
+        )
+        self.dept_admin = User.objects.create_user(
+            "hod_cs", "hod@rvce.edu.in", "pass123", role=User.Role.DEPT_ADMIN, assigned_department=self.dept, is_staff=True
+        )
+        self.faculty_user = User.objects.create_user(
+            "dr_smith", "smith@rvce.edu.in", "pass123", role=User.Role.FACULTY
+        )
+        self.faculty_profile = FacultyProfile.objects.create(
+            user=self.faculty_user, department=self.dept, employee_id="EMP-101", designation="Professor"
+        )
+        self.student_user = User.objects.create_user(
+            "stud_john", "john@rvce.edu.in", "pass123", role=User.Role.STUDENT
+        )
+        self.student_profile = StudentProfile.objects.create(
+            user=self.student_user, batch=self.batch, register_number="1RV24CS099", roll_number="CS-99"
+        )
+
+    def test_department_views(self):
+        """College admin can list, view, and create departments."""
+        self.client.login(username="admin_user", password="pass123")
+        res = self.client.get(reverse("academics:department_list"))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Computer Science")
+
+        # Create department
+        res = self.client.post(reverse("academics:department_create"), {
+            "college": str(self.college.id),
+            "code": "ISE",
+            "name": "Information Science & Engineering",
+            "description": "Dept of ISE",
+        })
+        self.assertEqual(res.status_code, 302)
+        self.assertTrue(Department.objects.filter(code="ISE").exists())
+
+    def test_program_views(self):
+        """Department admin can list and create degree programs."""
+        self.client.login(username="hod_cs", password="pass123")
+        res = self.client.get(reverse("academics:program_list"))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "BTECH-CS")
+
+        # Create program
+        res = self.client.post(reverse("academics:program_create"), {
+            "department": str(self.dept.id),
+            "code": "MTECH-AI",
+            "name": "M.Tech in Artificial Intelligence",
+            "degree_type": "PG",
+            "duration_years": 2,
+            "total_semesters": 4,
+        })
+        self.assertEqual(res.status_code, 302)
+        self.assertTrue(Program.objects.filter(code="MTECH-AI").exists())
+
+    def test_scheme_cloning_workstation_view(self):
+        """Admin can trigger scheme cloning through the web workstation."""
+        self.client.login(username="hod_cs", password="pass123")
+        res = self.client.post(reverse("academics:scheme_clone"), {
+            "source_scheme": str(self.scheme.id),
+            "new_code": "SCH2027",
+            "new_name": "2027 Autonomous Scheme",
+            "effective_year": 2027,
+        })
+        self.assertEqual(res.status_code, 302)
+        cloned = Scheme.objects.filter(code="SCH2027").first()
+        self.assertIsNotNone(cloned)
+        self.assertEqual(cloned.semesters.count(), 1)
+        self.assertTrue(cloned.semesters.first().courses.filter(code="CS101").exists())
+
+    def test_student_registration_view(self):
+        """Register student creates both User and StudentProfile atomically."""
+        self.client.login(username="hod_cs", password="pass123")
+        res = self.client.post(reverse("academics:student_create"), {
+            "username": "student_neha",
+            "first_name": "Neha",
+            "last_name": "Patel",
+            "email": "neha@rvce.edu.in",
+            "password": "pass123",
+            "batch": str(self.batch.id),
+            "register_number": "1RV24CS055",
+            "roll_number": "CS-55",
+            "status": "ACTIVE",
+            "blood_group": "O+",
+        })
+        self.assertEqual(res.status_code, 302)
+        self.assertTrue(User.objects.filter(username="student_neha").exists())
+        self.assertTrue(StudentProfile.objects.filter(register_number="1RV24CS055").exists())
+
+    def test_faculty_registration_view(self):
+        """Register faculty creates both User and FacultyProfile atomically."""
+        self.client.login(username="admin_user", password="pass123")
+        res = self.client.post(reverse("academics:faculty_create"), {
+            "username": "prof_jones",
+            "first_name": "David",
+            "last_name": "Jones",
+            "email": "jones@rvce.edu.in",
+            "password": "pass123",
+            "department": str(self.dept.id),
+            "employee_id": "EMP-CS-999",
+            "designation": "Associate Professor",
+            "qualification": "Ph.D.",
+        })
+        self.assertEqual(res.status_code, 302)
+        self.assertTrue(User.objects.filter(username="prof_jones").exists())
+        self.assertTrue(FacultyProfile.objects.filter(employee_id="EMP-CS-999").exists())
+
+    def test_global_search_view(self):
+        """Global search successfully returns students, courses, batches, and programs."""
+        self.client.login(username="admin_user", password="pass123")
+        # Search by USN
+        res = self.client.get(reverse("academics:global_search"), {"q": "1RV24CS099"})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "stud_john")
+
+        # Search by course code
+        res_course = self.client.get(reverse("academics:global_search"), {"q": "CS101"})
+        self.assertEqual(res_course.status_code, 200)
+        self.assertContains(res_course, "Intro to Computing")
+
+    def test_rbac_security_protection(self):
+        """Student cannot access department creation or student registration."""
+        self.client.login(username="stud_john", password="pass123")
+
+        # Try to access department creation
+        res = self.client.get(reverse("academics:department_create"))
+        self.assertEqual(res.status_code, 302)  # Redirected with access denied
+
+        # Try to access student registration
+        res_stud = self.client.get(reverse("academics:student_create"))
+        self.assertEqual(res_stud.status_code, 302)  # Redirected with access denied
+

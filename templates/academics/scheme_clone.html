@@ -1,0 +1,90 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Curriculum Scheme Cloning Workstation — College LMS{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <div class="welcome-card" style="margin-bottom: var(--space-xl);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+            <div>
+                <span class="badge badge-admin">Curriculum Automation Engine</span>
+                <h2 class="welcome-title" style="margin-top: 0.5rem;">Scheme Cloning Workstation</h2>
+                <p class="welcome-subtitle">
+                    Duplicates an entire curriculum regulation scheme — including all associated semesters and child course records — under a new scheme code and academic year.
+                </p>
+            </div>
+            <a href="{% url 'academics:scheme_list' %}" class="btn btn-secondary">
+                &larr; Back to Schemes
+            </a>
+        </div>
+    </div>
+
+    {% if form.errors %}
+    <div style="padding: var(--space-md); background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); border-radius: var(--radius-md); margin-bottom: var(--space-lg); color: #fca5a5;">
+        <div style="font-weight: 700; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Validation Errors:
+        </div>
+        <ul style="margin-left: 1.5rem; font-size: 0.875rem;">
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                    <li><strong>{{ field|title }}:</strong> {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="card" style="padding: var(--space-xl);">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div style="display: flex; flex-direction: column; gap: var(--space-md);">
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.source_scheme.id_for_label }}">
+                        Source Curriculum Scheme <span style="color: var(--danger);">*</span>
+                    </label>
+                    {{ form.source_scheme }}
+                    <div class="form-hint">{{ form.source_scheme.help_text }}</div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.new_code.id_for_label }}">
+                            New Scheme Code <span style="color: var(--danger);">*</span>
+                        </label>
+                        {{ form.new_code }}
+                        <div class="form-hint">{{ form.new_code.help_text }}</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.effective_year.id_for_label }}">
+                            Effective Academic Year <span style="color: var(--danger);">*</span>
+                        </label>
+                        {{ form.effective_year }}
+                        <div class="form-hint">{{ form.effective_year.help_text }}</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.new_name.id_for_label }}">
+                        New Regulation Title <span style="color: var(--danger);">*</span>
+                    </label>
+                    {{ form.new_name }}
+                    <div class="form-hint">{{ form.new_name.help_text }}</div>
+                </div>
+
+                <div style="padding: var(--space-md); background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: var(--radius-md); font-size: 0.85rem; color: var(--text-secondary); margin-top: var(--space-sm);">
+                    <strong style="color: #818cf8;">⚙️ Atomic Operation:</strong> Cloned courses inherit L-T-P notations, syllabi summaries, and academic credit weightings. You can subsequently modify or add individual courses in the newly created scheme.
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: var(--space-sm); margin-top: var(--space-lg); padding-top: var(--space-md); border-top: 1px solid var(--border-subtle);">
+                    <a href="{% url 'academics:scheme_list' %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.75rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        Execute Scheme Duplication
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

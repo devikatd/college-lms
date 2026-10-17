@@ -1,0 +1,105 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}{{ scheme.name }} — College LMS{% endblock %}
+
+{% block content %}
+<div class="welcome-card" style="margin-bottom: var(--space-xl);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                <span class="badge badge-dept">{{ scheme.code }}</span>
+                <span class="badge badge-faculty">{{ scheme.program.code }}</span>
+                {% if scheme.is_active %}
+                <span class="badge badge-student">Active Scheme</span>
+                {% else %}
+                <span class="badge badge-admin">Archived</span>
+                {% endif %}
+            </div>
+            <h2 class="welcome-title">{{ scheme.name }}</h2>
+            <p class="welcome-subtitle">
+                Effective Year: <strong>{{ scheme.effective_year }}</strong> &bull; Total Graduation Credits Required: <strong>{{ scheme.total_credits_required }}</strong>
+            </p>
+        </div>
+        <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
+            <a href="{% url 'academics:scheme_clone' %}?source_id={{ scheme.id }}" class="btn btn-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Clone Scheme
+            </a>
+            <a href="{% url 'academics:course_create' %}" class="btn btn-primary">
+                + Add Course
+            </a>
+            <a href="{% url 'academics:scheme_list' %}" class="btn btn-secondary">
+                &larr; All Schemes
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Semester Roadmap Breakdown -->
+<div style="display: flex; flex-direction: column; gap: var(--space-xl);">
+    {% for sem in semesters %}
+    <div class="card">
+        <div class="card-header" style="border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-sm);">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary);">Semester {{ sem.semester_number }}</span>
+                <span class="badge badge-dept">{{ sem.get_semester_type_display }}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: var(--space-sm);">
+                <span style="font-size: 0.8rem; color: var(--text-muted);">{{ sem.courses.count }} Subjects</span>
+                <a href="{% url 'academics:course_create' %}?semester_id={{ sem.id }}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">
+                    + Course
+                </a>
+            </div>
+        </div>
+
+        <div style="overflow-x: auto; margin-top: var(--space-md);">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--border-subtle); color: var(--text-muted);">
+                        <th style="padding: var(--space-sm);">Code</th>
+                        <th style="padding: var(--space-sm);">Course Title</th>
+                        <th style="padding: var(--space-sm);">Type</th>
+                        <th style="padding: var(--space-sm);">L-T-P</th>
+                        <th style="padding: var(--space-sm);">Credits</th>
+                        <th style="padding: var(--space-sm); text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in sem.courses.all %}
+                    <tr style="border-bottom: 1px solid var(--border-subtle);">
+                        <td style="padding: var(--space-sm); font-weight: 700; color: #818cf8;">
+                            <code>{{ c.code }}</code>
+                        </td>
+                        <td style="padding: var(--space-sm); font-weight: 600; color: var(--text-primary);">
+                            <a href="{% url 'academics:course_detail' c.id %}" style="color: inherit; text-decoration: none;">
+                                {{ c.title }}
+                            </a>
+                        </td>
+                        <td style="padding: var(--space-sm);">
+                            <span class="badge badge-faculty">{{ c.get_course_type_display }}</span>
+                        </td>
+                        <td style="padding: var(--space-sm); font-family: var(--font-mono); color: var(--text-secondary);">
+                            {{ c.ltp_structure }}
+                        </td>
+                        <td style="padding: var(--space-sm); font-weight: 700; color: var(--text-primary);">
+                            {{ c.credits }}
+                        </td>
+                        <td style="padding: var(--space-sm); text-align: right;">
+                            <a href="{% url 'academics:course_detail' c.id %}" class="btn btn-secondary" style="padding: 0.2rem 0.45rem; font-size: 0.75rem;">View</a>
+                            <a href="{% url 'academics:course_edit' c.id %}" class="btn btn-secondary" style="padding: 0.2rem 0.45rem; font-size: 0.75rem;">Edit</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="padding: var(--space-md); text-align: center; color: var(--text-muted); font-size: 0.8rem;">
+                            No courses defined for Semester {{ sem.semester_number }}.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

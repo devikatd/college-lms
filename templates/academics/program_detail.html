@@ -1,0 +1,107 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}{{ program.name }} — College LMS{% endblock %}
+
+{% block content %}
+<div class="welcome-card" style="margin-bottom: var(--space-xl);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                <span class="badge badge-dept">{{ program.code }}</span>
+                <span class="badge badge-faculty">{{ program.get_degree_type_display }}</span>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">{{ program.department.name }}</span>
+            </div>
+            <h2 class="welcome-title">{{ program.name }}</h2>
+            <p class="welcome-subtitle">Nominal Duration: {{ program.duration_years }} Academic Years &bull; {{ program.total_semesters }} Semesters</p>
+        </div>
+        <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
+            <a href="{% url 'academics:program_edit' program.id %}" class="btn btn-secondary">
+                Edit Program
+            </a>
+            <a href="{% url 'academics:scheme_create' %}" class="btn btn-primary">
+                + Add Scheme
+            </a>
+            <a href="{% url 'academics:batch_create' %}" class="btn btn-secondary">
+                + New Batch
+            </a>
+            <a href="{% url 'academics:program_list' %}" class="btn btn-secondary">
+                &larr; All Programs
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Grid: Schemes and Batches -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: var(--space-xl);">
+    <!-- Schemes -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Curriculum Schemes / Regulations</h3>
+            <div style="display: flex; gap: var(--space-xs);">
+                <a href="{% url 'academics:scheme_clone' %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">Clone Scheme</a>
+                <a href="{% url 'academics:scheme_create' %}" class="btn btn-primary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">+ New</a>
+            </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-md);">
+            {% for s in schemes %}
+            <div style="padding: var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <a href="{% url 'academics:scheme_detail' s.id %}" style="font-weight: 700; color: var(--text-primary);">
+                        {{ s.name }}
+                    </a>
+                    {% if s.is_active %}
+                    <span class="badge badge-student">Active</span>
+                    {% else %}
+                    <span class="badge badge-admin">Archived</span>
+                    {% endif %}
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+                    Code: <code>{{ s.code }}</code> &bull; Effective: {{ s.effective_year }} &bull; Total Credits: {{ s.total_credits_required }}
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: var(--space-xs); margin-top: var(--space-sm);">
+                    <a href="{% url 'academics:scheme_detail' s.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">Explore Semesters</a>
+                    <a href="{% url 'academics:scheme_clone' %}?source_id={{ s.id }}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">Clone Regulation</a>
+                </div>
+            </div>
+            {% empty %}
+            <p style="color: var(--text-muted); font-size: 0.875rem;">No curriculum schemes registered.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Batches -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Enrolled Batches / Cohorts</h3>
+            <a href="{% url 'academics:batch_create' %}" class="btn btn-primary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">+ New Batch</a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-md);">
+            {% for b in batches %}
+            <div style="padding: var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <a href="{% url 'academics:batch_detail' b.id %}" style="font-weight: 700; color: var(--text-primary);">
+                        {{ b.name }}
+                    </a>
+                    {% if b.is_graduated %}
+                    <span class="badge badge-admin">Graduated</span>
+                    {% else %}
+                    <span class="badge badge-student">Active &bull; Sem {{ b.current_semester }}</span>
+                    {% endif %}
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+                    Admission: {{ b.admission_year }} &bull; Grad: {{ b.graduation_year }} &bull; Scheme: {{ b.scheme.code }}
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: var(--space-xs); margin-top: var(--space-sm);">
+                    <a href="{% url 'academics:batch_detail' b.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">View Roster</a>
+                    {% if not b.is_graduated %}
+                    <a href="{% url 'enrollment:batch_promote' b.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">Promote</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <p style="color: var(--text-muted); font-size: 0.875rem;">No student cohorts enrolled under this program.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

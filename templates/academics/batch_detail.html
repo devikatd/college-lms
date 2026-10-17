@@ -1,0 +1,136 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}{{ batch.name }} — College LMS{% endblock %}
+
+{% block content %}
+<div class="welcome-card" style="margin-bottom: var(--space-xl);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                <span class="badge badge-dept">{{ batch.program.code }}</span>
+                <span class="badge badge-faculty">Scheme: {{ batch.scheme.code }}</span>
+                {% if batch.is_graduated %}
+                <span class="badge badge-admin">Graduated Cohort</span>
+                {% else %}
+                <span class="badge badge-student">Active &bull; Semester {{ batch.current_semester }} of {{ batch.program.total_semesters }}</span>
+                {% endif %}
+            </div>
+            <h2 class="welcome-title">{{ batch.name }}</h2>
+            <p class="welcome-subtitle">
+                Admitted: <strong>{{ batch.admission_year }}</strong> &bull; Expected Graduation: <strong>{{ batch.graduation_year }}</strong> &bull; Total Students: <strong>{{ students.count }}</strong>
+            </p>
+        </div>
+        <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
+            {% if not batch.is_graduated %}
+            <a href="{% url 'enrollment:batch_promote' batch.id %}" class="btn btn-secondary">
+                Promote Semester &rarr;
+            </a>
+            <a href="{% url 'enrollment:generate_offerings' %}?batch_id={{ batch.id }}" class="btn btn-primary">
+                Initialize Course Offerings
+            </a>
+            {% endif %}
+            <a href="{% url 'academics:student_create' %}" class="btn btn-secondary">
+                + Add Student
+            </a>
+            <a href="{% url 'academics:batch_edit' batch.id %}" class="btn btn-secondary">
+                Edit Batch
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Enrolled Student Roster Table -->
+<div class="card" style="padding: 0; overflow: hidden; margin-bottom: var(--space-xl);">
+    <div style="padding: var(--space-md) var(--space-lg); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title" style="margin: 0;">Enrolled Student Cohort Roster</h3>
+        <span class="badge badge-student">{{ students.count }} Registered Students</span>
+    </div>
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); background: rgba(15, 23, 42, 0.4);">
+                    <th style="padding: var(--space-md);">USN / Register No</th>
+                    <th style="padding: var(--space-md);">Student Name</th>
+                    <th style="padding: var(--space-md);">Class Roll No</th>
+                    <th style="padding: var(--space-md);">Email</th>
+                    <th style="padding: var(--space-md);">Academic Status</th>
+                    <th style="padding: var(--space-md); text-align: right;">Academic Dossier</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr style="border-bottom: 1px solid var(--border-subtle);">
+                    <td style="padding: var(--space-md); font-weight: 700; color: #818cf8;">
+                        <code>{{ s.register_number }}</code>
+                    </td>
+                    <td style="padding: var(--space-md); font-weight: 600; color: var(--text-primary);">
+                        <a href="{% url 'academics:student_detail' s.id %}" style="color: inherit; text-decoration: none;">
+                            {{ s.full_name }}
+                        </a>
+                    </td>
+                    <td style="padding: var(--space-md); color: var(--text-secondary);">
+                        {{ s.roll_number|default:"-" }}
+                    </td>
+                    <td style="padding: var(--space-md); color: var(--text-secondary);">
+                        {{ s.user.email }}
+                    </td>
+                    <td style="padding: var(--space-md);">
+                        {% if s.status == 'ACTIVE' %}
+                        <span class="badge badge-student">Active</span>
+                        {% elif s.status == 'DETAINED' %}
+                        <span class="badge" style="background:#fee2e2; color:#dc2626;">Detained</span>
+                        {% elif s.status == 'GRADUATED' %}
+                        <span class="badge badge-admin">Graduated</span>
+                        {% else %}
+                        <span class="badge badge-faculty">{{ s.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: var(--space-md); text-align: right;">
+                        <a href="{% url 'academics:student_detail' s.id %}" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">
+                            View Dossier &rarr;
+                        </a>
+                        <a href="{% url 'academics:student_edit' s.id %}" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">
+                            Edit
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="padding: var(--space-2xl); text-align: center; color: var(--text-muted);">
+                        No students enrolled in this batch yet. Click "+ Add Student" above to register students.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Active Course Offerings for this Batch -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Live Semester Course Offerings</h3>
+        <a href="{% url 'enrollment:generate_offerings' %}?batch_id={{ batch.id }}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">Generate Offerings</a>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-md);">
+        {% for off in offerings %}
+        <div style="padding: var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-sm);">
+            <div>
+                <span style="font-weight: 700; color: var(--text-primary);">{{ off.course.code }} — {{ off.course.title }}</span>
+                <span class="badge badge-dept" style="margin-left: 0.5rem;">Section {{ off.section }}</span>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+                    Instructor: <strong>{{ off.faculty.full_name|default:"Unassigned" }}</strong> &bull; Term: {{ off.academic_year }} ({{ off.term }})
+                </div>
+            </div>
+            <div style="display: flex; gap: var(--space-xs);">
+                <a href="{% url 'enrollment:export_roster_csv' off.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">Export Roster CSV</a>
+                <a href="{% url 'enrollment:attendance_history' off.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">Attendance</a>
+                <a href="{% url 'enrollment:manage_assessments' off.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">Assessments</a>
+            </div>
+        </div>
+        {% empty %}
+        <p style="color: var(--text-muted); font-size: 0.875rem;">No active course offerings generated for this batch yet.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

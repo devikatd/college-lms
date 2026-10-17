@@ -1,0 +1,99 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Course Directory & Syllabi — College LMS{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md); margin-bottom: var(--space-lg);">
+    <div>
+        <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary);">Course Directory & Syllabi</h2>
+        <p style="color: var(--text-secondary); font-size: 0.875rem;">Explore courses, credits, L-T-P lecture-tutorial-practical breakdowns, and syllabus summaries.</p>
+    </div>
+    <div style="display: flex; gap: var(--space-sm);">
+        <a href="{% url 'academics:course_create' %}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Course
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card" style="margin-bottom: var(--space-lg); padding: var(--space-md);">
+    <form method="get" style="display: flex; gap: var(--space-sm); flex-wrap: wrap; align-items: center;">
+        <input type="text" name="q" value="{{ search_q }}" placeholder="Search by course code, title, syllabus keywords..." class="form-input" style="flex: 1; min-width: 240px;">
+
+        <select name="course_type" class="form-select" style="width: auto;">
+            <option value="">All Pedagogical Types</option>
+            {% for val, label in course_types %}
+            <option value="{{ val }}" {% if selected_type == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="scheme" class="form-select" style="width: auto;">
+            <option value="">All Schemes</option>
+            {% for s in schemes %}
+            <option value="{{ s.id }}" {% if selected_scheme == s.id|stringformat:"s" %}selected{% endif %}>{{ s.code }} ({{ s.program.code }})</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn btn-secondary">Filter</button>
+        {% if search_q or selected_type or selected_scheme %}
+        <a href="{% url 'academics:course_list' %}" class="btn btn-secondary">Reset</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Courses Table -->
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--border-subtle); background: rgba(15, 23, 42, 0.4);">
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">Code</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">Title</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">Scheme & Sem</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">Type</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">Credits</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">L-T-P</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700; text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in courses %}
+                <tr style="border-bottom: 1px solid var(--border-subtle);">
+                    <td style="padding: var(--space-md); font-weight: 700; color: #818cf8;">
+                        <code>{{ c.code }}</code>
+                    </td>
+                    <td style="padding: var(--space-md); font-weight: 600; color: var(--text-primary);">
+                        <a href="{% url 'academics:course_detail' c.id %}" style="color: inherit; text-decoration: none;">
+                            {{ c.title }}
+                        </a>
+                    </td>
+                    <td style="padding: var(--space-md); color: var(--text-secondary); font-size: 0.8rem;">
+                        {{ c.semester.scheme.code }} &bull; Sem {{ c.semester.semester_number }}
+                    </td>
+                    <td style="padding: var(--space-md);">
+                        <span class="badge badge-faculty">{{ c.get_course_type_display }}</span>
+                    </td>
+                    <td style="padding: var(--space-md); font-weight: 800; color: var(--text-primary);">
+                        {{ c.credits }}
+                    </td>
+                    <td style="padding: var(--space-md); font-family: var(--font-mono); color: var(--text-muted);">
+                        {{ c.ltp_structure }}
+                    </td>
+                    <td style="padding: var(--space-md); text-align: right;">
+                        <a href="{% url 'academics:course_detail' c.id %}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">View</a>
+                        <a href="{% url 'academics:course_edit' c.id %}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Edit</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="padding: var(--space-2xl); text-align: center; color: var(--text-muted);">
+                        No courses found matching your search.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

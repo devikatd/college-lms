@@ -1,0 +1,78 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}{{ course.code }} — {{ course.title }} — College LMS{% endblock %}
+
+{% block content %}
+<div class="welcome-card" style="margin-bottom: var(--space-xl);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                <span class="badge badge-dept">{{ course.code }}</span>
+                <span class="badge badge-faculty">{{ course.get_course_type_display }}</span>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">
+                    {{ course.semester.scheme.program.name }} &bull; Semester {{ course.semester.semester_number }}
+                </span>
+            </div>
+            <h2 class="welcome-title">{{ course.title }}</h2>
+            <p class="welcome-subtitle">
+                Academic Weight: <strong>{{ course.credits }} Credits</strong> &bull; L-T-P: <strong>{{ course.ltp_structure }}</strong>
+                (Lecture: {{ course.lecture_hours }}h, Tutorial: {{ course.tutorial_hours }}h, Practical: {{ course.practical_hours }}h / week)
+            </p>
+        </div>
+        <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
+            {% if user.is_college_admin or user.is_dept_admin %}
+            <a href="{% url 'academics:course_edit' course.id %}" class="btn btn-primary">
+                Edit Course
+            </a>
+            {% endif %}
+            <a href="{% url 'academics:scheme_detail' course.semester.scheme.id %}" class="btn btn-secondary">
+                View Scheme
+            </a>
+            <a href="{% url 'academics:course_list' %}" class="btn btn-secondary">
+                &larr; All Courses
+            </a>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: var(--space-xl);">
+    <!-- Syllabus & Course Objectives -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Syllabus Overview & Course Outcomes</h3>
+        </div>
+        <div style="margin-top: var(--space-md); color: var(--text-secondary); line-height: 1.7; font-size: 0.95rem; white-space: pre-line;">
+            {{ course.syllabus_summary|default:"No syllabus content entered yet for this course." }}
+        </div>
+    </div>
+
+    <!-- Active Offerings & Sections -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Current Course Offerings & Instructors</h3>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-md);">
+            {% for off in offerings %}
+            <div style="padding: var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 700; color: var(--text-primary);">
+                        {{ off.batch.name }} (Section {{ off.section }})
+                    </span>
+                    <span class="badge badge-dept">{{ off.academic_year }} {{ off.term }}</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+                    Faculty Instructor: <strong style="color: #818cf8;">{{ off.faculty.full_name|default:"Unassigned" }}</strong> &bull; {{ off.enrollments.count }} Enrolled
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: var(--space-xs); margin-top: var(--space-sm);">
+                    <a href="{% url 'enrollment:export_roster_csv' off.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">
+                        Export Roster CSV
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <p style="color: var(--text-muted); font-size: 0.875rem;">No active offerings generated for this course.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

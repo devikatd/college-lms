@@ -1,0 +1,108 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}{{ department.name }} — College LMS{% endblock %}
+
+{% block content %}
+<div class="welcome-card" style="margin-bottom: var(--space-xl);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                <span class="badge badge-dept">{{ department.code }}</span>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">{{ department.college.name }}</span>
+            </div>
+            <h2 class="welcome-title">{{ department.name }}</h2>
+            <p class="welcome-subtitle">{{ department.description|default:"Apex Academic Unit" }}</p>
+        </div>
+        <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
+            {% if user.is_college_admin or user.department == department %}
+            <a href="{% url 'academics:department_edit' department.id %}" class="btn btn-secondary">
+                Edit Department
+            </a>
+            <a href="{% url 'academics:program_create' %}" class="btn btn-primary">
+                + Add Program
+            </a>
+            {% endif %}
+            <a href="{% url 'academics:department_list' %}" class="btn btn-secondary">
+                &larr; All Departments
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Metric Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-xl);">
+    <div class="card" style="border-left: 4px solid var(--primary);">
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Degree Programs</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">{{ programs.count }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">Administered Degrees</div>
+    </div>
+    <div class="card" style="border-left: 4px solid #06b6d4;">
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Active Batches</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">{{ batches.count }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">Student Cohorts</div>
+    </div>
+    <div class="card" style="border-left: 4px solid #10b981;">
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Students</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">{{ student_count }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">Registered in Department</div>
+    </div>
+    <div class="card" style="border-left: 4px solid #f59e0b;">
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Faculty Roster</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin: var(--space-xs) 0;">{{ faculty_list.count }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">Academic Staff</div>
+    </div>
+</div>
+
+<!-- Two Columns: Programs & Faculty -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: var(--space-xl);">
+    <!-- Programs -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Degree Programs</h3>
+            <a href="{% url 'academics:program_create' %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">+ New</a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-md);">
+            {% for prog in programs %}
+            <div style="padding: var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <a href="{% url 'academics:program_detail' prog.id %}" style="font-weight: 700; color: var(--text-primary);">
+                        {{ prog.name }}
+                    </a>
+                    <span class="badge badge-dept">{{ prog.get_degree_type_display }}</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+                    Code: <code>{{ prog.code }}</code> &bull; {{ prog.duration_years }} Years &bull; {{ prog.total_semesters }} Semesters
+                </div>
+            </div>
+            {% empty %}
+            <p style="color: var(--text-muted); font-size: 0.875rem;">No programs configured.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Faculty Members -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Faculty Members</h3>
+            <a href="{% url 'academics:faculty_create' %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">+ New</a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-md);">
+            {% for fac in faculty_list %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-sm) var(--space-md); background: rgba(15, 23, 42, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <div>
+                    <a href="{% url 'academics:faculty_detail' fac.id %}" style="font-weight: 700; color: var(--text-primary);">
+                        {{ fac.full_name }}
+                    </a>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">
+                        {{ fac.designation }} &bull; {{ fac.employee_id }}
+                    </div>
+                </div>
+                <span class="badge badge-faculty">{{ fac.cabin_location|default:"Main Block" }}</span>
+            </div>
+            {% empty %}
+            <p style="color: var(--text-muted); font-size: 0.875rem;">No faculty members registered.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Student Batches & Cohorts — College LMS{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md); margin-bottom: var(--space-lg);">
+    <div>
+        <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary);">Student Batches & Cohorts</h2>
+        <p style="color: var(--text-secondary); font-size: 0.875rem;">Manage admitted student cohorts, active semesters, and cohort semester promotions.</p>
+    </div>
+    <div style="display: flex; gap: var(--space-sm);">
+        <a href="{% url 'academics:batch_create' %}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Student Batch
+        </a>
+    </div>
+</div>
+
+<!-- Search & Filters -->
+<div class="card" style="margin-bottom: var(--space-lg); padding: var(--space-md);">
+    <form method="get" style="display: flex; gap: var(--space-sm); flex-wrap: wrap; align-items: center;">
+        <input type="text" name="q" value="{{ search_q }}" placeholder="Search batch by name, program..." class="form-input" style="flex: 1; min-width: 220px;">
+        <select name="status" class="form-select" style="width: auto;">
+            <option value="">All Cohort Statuses</option>
+            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active / Ongoing</option>
+            <option value="graduated" {% if status_filter == 'graduated' %}selected{% endif %}>Graduated</option>
+        </select>
+        <button type="submit" class="btn btn-secondary">Filter</button>
+        {% if search_q or status_filter %}
+        <a href="{% url 'academics:batch_list' %}" class="btn btn-secondary">Reset</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Batches Table -->
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--border-subtle); background: rgba(15, 23, 42, 0.4);">
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">Cohort Name</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">Program</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">Scheme</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">Timeline</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">Current Term</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">Enrolled</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700; text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in batches %}
+                <tr style="border-bottom: 1px solid var(--border-subtle);">
+                    <td style="padding: var(--space-md); font-weight: 700; color: var(--text-primary);">
+                        <a href="{% url 'academics:batch_detail' b.id %}" style="color: inherit; text-decoration: none;">
+                            {{ b.name }}
+                        </a>
+                    </td>
+                    <td style="padding: var(--space-md); color: var(--text-secondary);">
+                        {{ b.program.code }}
+                    </td>
+                    <td style="padding: var(--space-md); font-size: 0.85rem; color: #818cf8;">
+                        <code>{{ b.scheme.code }}</code>
+                    </td>
+                    <td style="padding: var(--space-md); color: var(--text-secondary);">
+                        {{ b.admission_year }} &ndash; {{ b.graduation_year }}
+                    </td>
+                    <td style="padding: var(--space-md);">
+                        {% if b.is_graduated %}
+                        <span class="badge badge-admin">Graduated</span>
+                        {% else %}
+                        <span class="badge badge-student">Semester {{ b.current_semester }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: var(--space-md); font-weight: 700; color: var(--text-primary);">
+                        {{ b.students.count }}
+                    </td>
+                    <td style="padding: var(--space-md); text-align: right;">
+                        <a href="{% url 'academics:batch_detail' b.id %}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">View</a>
+                        <a href="{% url 'academics:batch_edit' b.id %}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Edit</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="padding: var(--space-2xl); text-align: center; color: var(--text-muted);">
+                        No student batches found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

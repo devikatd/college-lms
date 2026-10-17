@@ -1,0 +1,102 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Degree Programs — College LMS{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md); margin-bottom: var(--space-lg);">
+    <div>
+        <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary);">Degree Programs</h2>
+        <p style="color: var(--text-secondary); font-size: 0.875rem;">Undergraduate, Postgraduate, Diploma and Doctorate degree tiers.</p>
+    </div>
+    <div style="display: flex; gap: var(--space-sm);">
+        <a href="{% url 'academics:program_create' %}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Degree Program
+        </a>
+    </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="card" style="margin-bottom: var(--space-lg); padding: var(--space-md);">
+    <form method="get" style="display: flex; gap: var(--space-sm); flex-wrap: wrap; align-items: center;">
+        <input type="text" name="q" value="{{ search_q }}" placeholder="Search by name, code..." class="form-input" style="flex: 1; min-width: 200px;">
+        
+        {% if departments %}
+        <select name="department" class="form-select" style="width: auto;">
+            <option value="">All Departments</option>
+            {% for d in departments %}
+            <option value="{{ d.id }}" {% if selected_dept == d.id|stringformat:"s" %}selected{% endif %}>{{ d.code }}</option>
+            {% endfor %}
+        </select>
+        {% endif %}
+
+        <select name="degree_type" class="form-select" style="width: auto;">
+            <option value="">All Tiers (UG/PG/PhD)</option>
+            <option value="UG" {% if selected_degree == 'UG' %}selected{% endif %}>Undergraduate (UG)</option>
+            <option value="PG" {% if selected_degree == 'PG' %}selected{% endif %}>Postgraduate (PG)</option>
+            <option value="DIPLOMA" {% if selected_degree == 'DIPLOMA' %}selected{% endif %}>Diploma</option>
+            <option value="PHD" {% if selected_degree == 'PHD' %}selected{% endif %}>Doctorate / PhD</option>
+        </select>
+
+        <button type="submit" class="btn btn-secondary">Filter</button>
+        {% if search_q or selected_dept or selected_degree %}
+        <a href="{% url 'academics:program_list' %}" class="btn btn-secondary">Reset</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Programs Table -->
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--border-subtle); background: rgba(15, 23, 42, 0.4);">
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">Code</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">Program Title</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">Department</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">Tier</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">Duration</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700;">Schemes</th>
+                    <th style="padding: var(--space-md); color: var(--text-muted); font-weight: 700; text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prog in programs %}
+                <tr style="border-bottom: 1px solid var(--border-subtle); transition: background var(--transition-fast);">
+                    <td style="padding: var(--space-md); font-weight: 700; color: #818cf8;">
+                        <code>{{ prog.code }}</code>
+                    </td>
+                    <td style="padding: var(--space-md); font-weight: 600; color: var(--text-primary);">
+                        <a href="{% url 'academics:program_detail' prog.id %}" style="color: inherit; text-decoration: none;">
+                            {{ prog.name }}
+                        </a>
+                    </td>
+                    <td style="padding: var(--space-md); color: var(--text-secondary);">
+                        {{ prog.department.code }}
+                    </td>
+                    <td style="padding: var(--space-md);">
+                        <span class="badge badge-dept">{{ prog.get_degree_type_display }}</span>
+                    </td>
+                    <td style="padding: var(--space-md); color: var(--text-secondary);">
+                        {{ prog.duration_years }} yrs ({{ prog.total_semesters }} sem)
+                    </td>
+                    <td style="padding: var(--space-md);">
+                        <span class="badge badge-faculty">{{ prog.schemes.count }} Schemes</span>
+                    </td>
+                    <td style="padding: var(--space-md); text-align: right;">
+                        <a href="{% url 'academics:program_detail' prog.id %}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">View</a>
+                        <a href="{% url 'academics:program_edit' prog.id %}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Edit</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="padding: var(--space-2xl); text-align: center; color: var(--text-muted);">
+                        No programs found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

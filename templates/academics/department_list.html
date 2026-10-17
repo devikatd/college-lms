@@ -1,0 +1,81 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Academic Departments — College LMS{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md); margin-bottom: var(--space-lg);">
+    <div>
+        <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary);">Academic Departments</h2>
+        <p style="color: var(--text-secondary); font-size: 0.875rem;">Manage academic divisions, faculties, degree programs, and research centers.</p>
+    </div>
+    <div style="display: flex; gap: var(--space-sm);">
+        {% if user.is_college_admin %}
+        <a href="{% url 'academics:department_create' %}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Department
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="card" style="margin-bottom: var(--space-lg); padding: var(--space-md);">
+    <form method="get" style="display: flex; gap: var(--space-sm);">
+        <input type="text" name="q" value="{{ search_q }}" placeholder="Search departments by code, name..." class="form-input" style="flex: 1;">
+        <button type="submit" class="btn btn-secondary">Search</button>
+        {% if search_q %}
+        <a href="{% url 'academics:department_list' %}" class="btn btn-secondary">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Departments Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-lg);">
+    {% for dept in departments %}
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-sm);">
+                <span class="badge badge-dept" style="font-size: 0.85rem; font-weight: 700; letter-spacing: 0.5px;">{{ dept.code }}</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">{{ dept.college.code }}</span>
+            </div>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: var(--space-xs);">
+                <a href="{% url 'academics:department_detail' dept.id %}" style="color: inherit; text-decoration: none;">
+                    {{ dept.name }}
+                </a>
+            </h3>
+            <p style="color: var(--text-secondary); font-size: 0.825rem; line-height: 1.5; margin-bottom: var(--space-md);">
+                {{ dept.description|truncatewords:20|default:"No description recorded." }}
+            </p>
+        </div>
+
+        <div>
+            <div style="display: flex; gap: var(--space-md); padding: var(--space-sm) 0; border-top: 1px solid var(--border-subtle); margin-bottom: var(--space-md);">
+                <div>
+                    <div style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary);">{{ dept.programs.count }}</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Programs</div>
+                </div>
+                <div>
+                    <div style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary);">{{ dept.faculty_members.count }}</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Faculty</div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: var(--space-xs); justify-content: flex-end;">
+                <a href="{% url 'academics:department_detail' dept.id %}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
+                    View Details &rarr;
+                </a>
+                {% if user.is_college_admin or user.department == dept %}
+                <a href="{% url 'academics:department_edit' dept.id %}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
+                    Edit
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card" style="grid-column: 1 / -1; text-align: center; padding: var(--space-2xl);">
+        <p style="color: var(--text-muted);">No departments found matching your criteria.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
