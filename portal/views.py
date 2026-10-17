@@ -9,9 +9,11 @@ Renders rich operational data for each user role:
 """
 
 from decimal import Decimal
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.shortcuts import render
+from django.http import HttpResponseForbidden
+from django.shortcuts import render, redirect, get_object_or_404
 
 from accounts.models import User
 from accounts.decorators import (
@@ -21,6 +23,37 @@ from accounts.decorators import (
     faculty_required,
     student_required,
 )
+from .models import AcademicNotice
+from .forms import AcademicNoticeForm
+
+
+def get_user_notices_qs(user):
+    """Returns active academic notices visible to the specified user based on role and department scoping."""
+    qs = AcademicNotice.objects.filter(is_active=True).select_related("department", "publisher")
+
+    if user.is_college_admin:
+        return qs
+
+    dept = getattr(user, "department", None)
+    if not dept and hasattr(user, "student_profile") and user.student_profile and user.student_profile.batch:
+        dept = user.student_profile.batch.program.department
+
+    role_filter = [AcademicNotice.TargetRole.ALL]
+    if user.is_student:
+        role_filter.append(AcademicNotice.TargetRole.STUDENT)
+    elif user.is_faculty:
+        role_filter.append(AcademicNotice.TargetRole.FACULTY)
+    elif user.is_dept_admin:
+        role_filter.extend([AcademicNotice.TargetRole.FACULTY, AcademicNotice.TargetRole.ALL])
+
+    if dept:
+        qs = qs.filter(Q(department__isnull=True) | Q(department=dept))
+    else:
+        qs = qs.filter(department__isnull=True)
+
+    qs = qs.filter(target_role__in=role_filter)
+    return qs
+
 from academics.models import (
     College,
     Department,
@@ -57,6 +90,7 @@ def admin_dashboard(request):
         "offerings_count": CourseOffering.objects.count(),
         "recent_batches": Batch.objects.select_related("program", "scheme").order_by("-admission_year")[:5],
         "departments": Department.objects.prefetch_related("programs", "faculty_members").all()[:6],
+        "recent_notices": AcademicNotice.objects.filter(is_active=True).select_related("department", "publisher")[:4],
     }
     return render(request, "portal/admin_dashboard.html", context)
 
@@ -85,6 +119,7 @@ def department_dashboard(request):
         "faculty_members": faculty_members,
         "students_count": students_count,
         "courses_count": courses_count,
+        "recent_notices": get_user_notices_qs(request.user)[:4],
     }
     return render(request, "portal/department_dashboard.html", context)
 
@@ -113,6 +148,7 @@ def faculty_portal(request):
         "faculty_profile": faculty_profile,
         "offerings": offerings,
         "timetable_entries": timetable_entries,
+        "recent_notices": get_user_notices_qs(request.user)[:4],
     }
     return render(request, "portal/faculty_portal.html", context)
 
@@ -163,6 +199,7 @@ def student_portal(request):
         "curriculum_semesters": curriculum_semesters,
         "timetable_entries": timetable_entries,
         "learning_materials": learning_materials,
+        "recent_notices": get_user_notices_qs(request.user)[:4],
     }
     return render(request, "portal/student_portal.html", context)
 
@@ -230,4 +267,117 @@ def attendance_alerts_view(request):
         "search_q": search_q,
     }
     return render(request, "portal/attendance_alerts.html", context)
+
+
+# ── Campus Notice Board & Institutional Announcements ─────────────────────────
+
+@login_required
+def notice_list_view(request):
+    """Institutional notice board displaying official circulars and academic advisories."""
+    notices = get_user_notices_qs(request.user)
+
+    search_q = request.GET.get("q", "").strip()
+    category_filter = request.GET.get("category", "")
+    priority_filter = request.GET.get("priority", "")
+
+    if search_q:
+        notices = notices.filter(Q(title__icontains=search_q) | Q(content__icontains=search_q))
+    if category_filter:
+        notices = notices.filter(category=category_filter)
+    if priority_filter:
+        notices = notices.filter(priority=priority_filter)
+
+    can_create = request.user.is_college_admin or request.user.is_dept_admin
+
+    context = {
+        "page_title": "Campus Notice Board & Circulars",
+        "notices": notices,
+        "search_q": search_q,
+        "category_filter": category_filter,
+        "priority_filter": priority_filter,
+        "categories": AcademicNotice.Category.choices,
+        "priorities": AcademicNotice.Priority.choices,
+        "can_create": can_create,
+    }
+    return render(request, "portal/notice_list.html", context)
+
+
+@login_required
+@role_required([User.Role.COLLEGE_ADMIN, User.Role.DEPT_ADMIN])
+def notice_create_view(request):
+    """Publish a new academic announcement or institutional circular."""
+    if request.method == "POST":
+        form = AcademicNoticeForm(request.POST, user=request.user)
+        if form.is_valid():
+            notice = form.save(commit=False)
+            notice.publisher = request.user
+            if request.user.is_dept_admin:
+                notice.department = request.user.department
+            notice.save()
+            messages.success(request, f"Circular '{notice.title}' published successfully.")
+            return redirect("portal:notice_list")
+    else:
+        form = AcademicNoticeForm(user=request.user)
+
+    context = {
+        "page_title": "Publish Academic Notice / Circular",
+        "form": form,
+    }
+    return render(request, "portal/notice_create.html", context)
+
+
+@login_required
+def notice_detail_view(request, notice_id):
+    """Detailed reading view for an institutional academic notice."""
+    notice = get_object_or_404(AcademicNotice.objects.select_related("department", "publisher"), pk=notice_id)
+
+    user = request.user
+    if not user.is_college_admin:
+        if notice.target_role == AcademicNotice.TargetRole.STUDENT and not user.is_student and not user.is_dept_admin:
+            return HttpResponseForbidden("Not authorized to view this notice.")
+        if notice.target_role == AcademicNotice.TargetRole.FACULTY and not user.is_faculty and not user.is_dept_admin:
+            return HttpResponseForbidden("Not authorized to view this notice.")
+        if notice.department:
+            user_dept = getattr(user, "department", None)
+            if not user_dept and hasattr(user, "student_profile") and user.student_profile and user.student_profile.batch:
+                user_dept = user.student_profile.batch.program.department
+            if user_dept != notice.department:
+                return HttpResponseForbidden("This notice is restricted to another department.")
+
+    can_manage = (
+        user.is_college_admin
+        or (user.is_dept_admin and notice.department == user.department)
+        or notice.publisher == user
+    )
+
+    context = {
+        "page_title": notice.title,
+        "notice": notice,
+        "can_manage": can_manage,
+    }
+    return render(request, "portal/notice_detail.html", context)
+
+
+@login_required
+@role_required([User.Role.COLLEGE_ADMIN, User.Role.DEPT_ADMIN])
+def notice_delete_view(request, notice_id):
+    """Delete an academic notice / circular."""
+    notice = get_object_or_404(AcademicNotice, pk=notice_id)
+    user = request.user
+    if not user.is_college_admin and notice.publisher != user:
+        if not (user.is_dept_admin and notice.department == user.department):
+            return HttpResponseForbidden("You do not have permission to delete this circular.")
+
+    if request.method == "POST":
+        title = notice.title
+        notice.delete()
+        messages.success(request, f"Notice '{title}' deleted.")
+        return redirect("portal:notice_list")
+
+    context = {
+        "page_title": f"Delete Notice — {notice.title}",
+        "notice": notice,
+    }
+    return render(request, "portal/notice_confirm_delete.html", context)
+
 

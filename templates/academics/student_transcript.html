@@ -1,0 +1,236 @@
+{% extends "dashboard_base.html" %}
+
+{% block content %}
+<div class="transcript-wrapper" style="max-width: 960px; margin: 0 auto;">
+    <!-- Action Bar (Hidden during Print) -->
+    <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-xl); flex-wrap: wrap; gap: var(--space-md);">
+        <div>
+            <a href="{% url 'academics:student_detail' student.id %}" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-muted); text-decoration: none; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                Return to Academic Dossier
+            </a>
+            <h1 style="font-size: 1.75rem; font-weight: 700; margin: 0;">Official Academic Transcript & Grade Card</h1>
+        </div>
+        <div style="display: flex; gap: var(--space-sm);">
+            <button onclick="window.print()" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Print / Save PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Official Transcript Document Container -->
+    <div class="transcript-sheet card" style="background: var(--bg-surface); padding: var(--space-2xl); border-radius: var(--radius-lg); position: relative;">
+        <!-- Official Institutional Letterhead Header -->
+        <div style="border-bottom: 2px solid var(--border-color); padding-bottom: var(--space-xl); margin-bottom: var(--space-xl); text-align: center;">
+            <div style="font-size: 0.85rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--primary); font-weight: 700; margin-bottom: 0.25rem;">
+                Office of the Controller of Examinations
+            </div>
+            <h2 style="font-size: 1.75rem; font-weight: 800; margin: 0 0 0.25rem 0; letter-spacing: -0.02em;">
+                {{ college.name|default:"College Learning Management System" }}
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.875rem; margin: 0 0 var(--space-md) 0;">
+                {{ college.address|default:"Autonomous Institution Affiliated to State Technological University" }}
+            </p>
+            <div style="display: inline-block; padding: 0.35rem 1.25rem; background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 9999px; font-weight: 700; font-size: 0.9rem; color: var(--primary);">
+                CONSOLIDATED GRADE TRANSCRIPT & RECORD OF ACADEMIC PROGRESS
+            </div>
+        </div>
+
+        <!-- Student Dossier Metadata -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-xl); background: rgba(255, 255, 255, 0.02); padding: var(--space-lg); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+            <div>
+                <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); display: block;">Student Name</span>
+                <span style="font-weight: 700; font-size: 1.05rem;">{{ student.user.get_full_name|default:student.user.username }}</span>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); display: block;">University Seat No. (USN)</span>
+                <span style="font-weight: 700; font-size: 1.05rem; font-family: monospace; color: var(--primary);">{{ student.register_number }}</span>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); display: block;">Roll Number</span>
+                <span style="font-weight: 600;">{{ student.roll_number|default:"—" }}</span>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); display: block;">Degree Program</span>
+                <span style="font-weight: 600;">{{ student.batch.program.name }} ({{ student.batch.program.code }})</span>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); display: block;">Department</span>
+                <span style="font-weight: 600;">{{ student.batch.program.department.name }}</span>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); display: block;">Cohort / Batch</span>
+                <span style="font-weight: 600;">{{ student.batch.name }} (Admitted {{ student.batch.admission_year }})</span>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); display: block;">Curriculum Regulation</span>
+                <span style="font-weight: 600;">{{ student.batch.scheme.name }} ({{ student.batch.scheme.code }})</span>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); display: block;">Current Academic Status</span>
+                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-weight: 600;">
+                    {{ student.get_status_display }} {% if transcript.is_graduated %}(Graduated){% endif %}
+                </span>
+            </div>
+        </div>
+
+        <!-- Cumulative Summary Performance Banner -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-2xl); background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); padding: var(--space-lg); border-radius: var(--radius-md); border: 1px solid rgba(59, 130, 246, 0.2); text-align: center;">
+            <div>
+                <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 0.25rem;">Cumulative GPA (CGPA)</span>
+                <span style="font-size: 2.25rem; font-weight: 800; color: var(--primary); font-family: monospace;">
+                    {% if transcript.cgpa %}{{ transcript.cgpa|floatformat:2 }}{% else %}—{% endif %}
+                </span>
+                <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Scale of 10.00</span>
+            </div>
+            <div>
+                <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 0.25rem;">Total Credits Registered</span>
+                <span style="font-size: 2.25rem; font-weight: 800; color: var(--text-primary); font-family: monospace;">
+                    {{ transcript.total_credits_registered|floatformat:1 }}
+                </span>
+                <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Academic Credits Attempted</span>
+            </div>
+            <div>
+                <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 0.25rem;">Total Credits Earned</span>
+                <span style="font-size: 2.25rem; font-weight: 800; color: var(--accent-emerald); font-family: monospace;">
+                    {{ transcript.total_credits_earned|floatformat:1 }}
+                </span>
+                <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Qualifying Credits Completed</span>
+            </div>
+        </div>
+
+        <!-- Semester Breakdown Sections -->
+        {% if transcript.semesters %}
+            {% for sem in transcript.semesters %}
+            <div style="margin-bottom: var(--space-2xl);">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: var(--space-md); flex-wrap: wrap; gap: var(--space-sm);">
+                    <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-primary);">
+                        {{ sem.label }}
+                    </h3>
+                    <div style="font-size: 0.9rem; font-weight: 600; display: flex; gap: var(--space-lg);">
+                        <span>Credits Registered: <strong>{{ sem.credits_registered|floatformat:1 }}</strong></span>
+                        <span>Credits Earned: <strong style="color: var(--accent-emerald);">{{ sem.credits_earned|floatformat:1 }}</strong></span>
+                        <span style="color: var(--primary);">SGPA: <strong>{% if sem.sgpa %}{{ sem.sgpa|floatformat:2 }}{% else %}Pending{% endif %}</strong></span>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="data-table" style="font-size: 0.9rem;">
+                        <thead>
+                            <tr>
+                                <th style="width: 120px;">Course Code</th>
+                                <th>Course Title</th>
+                                <th style="width: 80px; text-align: center;">Credits</th>
+                                <th style="width: 110px; text-align: center;">Attendance</th>
+                                <th style="width: 80px; text-align: center;">Grade</th>
+                                <th style="width: 100px; text-align: center;">Grade Point</th>
+                                <th style="width: 110px; text-align: center;">Credit Points</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in sem.courses %}
+                            <tr>
+                                <td><code style="color: var(--primary); font-weight: 600;">{{ c.course.code }}</code></td>
+                                <td style="font-weight: 500;">{{ c.course.title }}</td>
+                                <td style="text-align: center;">{{ c.credits|floatformat:1 }}</td>
+                                <td style="text-align: center;">
+                                    <span style="{% if c.attendance_percentage < 75 %}color: var(--accent-rose); font-weight: 700;{% endif %}">
+                                        {{ c.attendance_percentage }}%
+                                    </span>
+                                </td>
+                                <td style="text-align: center;">
+                                    {% if c.grade == "PENDING" %}
+                                        <span class="badge" style="background: rgba(100, 116, 139, 0.2); color: #94a3b8;">Pending</span>
+                                    {% elif c.grade == "F" %}
+                                        <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 700;">F</span>
+                                    {% else %}
+                                        <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 700;">{{ c.grade }}</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center; font-family: monospace;">
+                                    {% if c.grade_point is not None %}{{ c.grade_point|floatformat:1 }}{% else %}—{% endif %}
+                                </td>
+                                <td style="text-align: center; font-family: monospace; font-weight: 600;">
+                                    {% if c.credit_points is not None %}{{ c.credit_points|floatformat:1 }}{% else %}—{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align: center; padding: var(--space-2xl); color: var(--text-muted); background: rgba(255, 255, 255, 0.01); border-radius: var(--radius-md);">
+                No course enrollments or grade evaluations found on record for this student.
+            </div>
+        {% endif %}
+
+        <!-- Institutional Grading Key & Authentication Sign-offs -->
+        <div style="margin-top: var(--space-2xl); border-top: 1px dashed var(--border-color); padding-top: var(--space-lg); font-size: 0.8rem; color: var(--text-muted);">
+            <div style="margin-bottom: var(--space-xl);">
+                <strong>Grading Scale Legend:</strong> O / S / A+ (10.0 Outstanding) • A (9.0 Excellent) • B+ (8.0 Very Good) • B (7.0 Good) • C+ (6.5 Above Average) • C (6.0 Average) • P / D (4.0/5.0 Pass) • F (0.0 Fail).
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: var(--space-2xl); padding-top: var(--space-xl);">
+                <div style="text-align: center; width: 200px;">
+                    <div style="border-bottom: 1px solid var(--text-muted); height: 40px; margin-bottom: 0.5rem;"></div>
+                    <span style="font-weight: 600;">Dean / HOD Signature</span>
+                </div>
+                <div style="text-align: center; width: 140px; border: 2px dashed var(--border-color); border-radius: var(--radius-md); padding: 0.75rem; font-size: 0.75rem;">
+                    [ INSTITUTIONAL SEAL ]
+                </div>
+                <div style="text-align: center; width: 220px;">
+                    <div style="border-bottom: 1px solid var(--text-muted); height: 40px; margin-bottom: 0.5rem;"></div>
+                    <span style="font-weight: 600;">Controller of Examinations</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Print Stylesheet -->
+<style>
+@media print {
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    }
+    .no-print, .app-sidebar, .app-header {
+        display: none !important;
+    }
+    .app-main {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+    .transcript-sheet {
+        background: #ffffff !important;
+        color: #000000 !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+    .transcript-sheet * {
+        color: #000000 !important;
+    }
+    .data-table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+    }
+    .data-table th, .data-table td {
+        border: 1px solid #d1d5db !important;
+        padding: 6px 8px !important;
+    }
+    .data-table th {
+        background-color: #f3f4f6 !important;
+    }
+    .badge {
+        border: 1px solid #000000 !important;
+        background: transparent !important;
+        color: #000000 !important;
+    }
+}
+</style>
+{% endblock %}

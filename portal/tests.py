@@ -174,3 +174,52 @@ class PortalIntegrationTestCase(TestCase):
         self.assertContains(res_stud, "Lecture 1: Computational Thinking")
         self.assertContains(res_stud, "Access Resource")
 
+    def test_academic_notice_board_and_audience_filtering(self):
+        """Campus Notice Board creation, audience filtering, and detail views."""
+        from portal.models import AcademicNotice
+
+        # Admin publishes institution-wide notice
+        self.client.login(username="admin_user", password="pass123")
+        res_create = self.client.post(reverse("portal:notice_create"), {
+            "title": "Annual Tech Symposium 2026",
+            "content": "All students and faculty are invited to register projects.",
+            "category": AcademicNotice.Category.EVENT,
+            "priority": AcademicNotice.Priority.IMPORTANT,
+            "target_role": AcademicNotice.TargetRole.ALL,
+            "is_active": True,
+        })
+        self.assertEqual(res_create.status_code, 302)
+        notice_all = AcademicNotice.objects.get(title="Annual Tech Symposium 2026")
+        self.assertEqual(notice_all.target_role, AcademicNotice.TargetRole.ALL)
+
+        # Create faculty-only notice
+        notice_fac = AcademicNotice.objects.create(
+            title="Faculty Evaluation Meeting",
+            content="Mandatory meeting for staff.",
+            category=AcademicNotice.Category.CIRCULAR,
+            target_role=AcademicNotice.TargetRole.FACULTY,
+            department=self.dept,
+            publisher=self.admin_user,
+            is_active=True,
+        )
+
+        # Faculty visits notice list — sees both notices
+        self.client.login(username="faculty_user", password="pass123")
+        res_fac = self.client.get(reverse("portal:notice_list"))
+        self.assertEqual(res_fac.status_code, 200)
+        self.assertContains(res_fac, "Annual Tech Symposium 2026")
+        self.assertContains(res_fac, "Faculty Evaluation Meeting")
+
+        # Student visits notice list — sees All notice, does NOT see Faculty notice
+        self.client.login(username="student_user", password="pass123")
+        res_stud = self.client.get(reverse("portal:notice_list"))
+        self.assertEqual(res_stud.status_code, 200)
+        self.assertContains(res_stud, "Annual Tech Symposium 2026")
+        self.assertNotContains(res_stud, "Faculty Evaluation Meeting")
+
+        # Detail view for authorized notice
+        res_detail = self.client.get(reverse("portal:notice_detail", args=[notice_all.id]))
+        self.assertEqual(res_detail.status_code, 200)
+        self.assertContains(res_detail, "Annual Tech Symposium 2026")
+
+

@@ -408,3 +408,84 @@ class AcademicManagementWorkstationTestCase(TestCase):
         res_stud = self.client.get(reverse("academics:student_create"))
         self.assertEqual(res_stud.status_code, 302)  # Redirected with access denied
 
+    def test_batch_csv_template_download(self):
+        """Department Admin can download a pre-formatted CSV template for student registration."""
+        self.client.login(username="admin_user", password="pass123")
+        res = self.client.get(reverse("academics:batch_csv_template", args=[self.batch.id]))
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res["Content-Type"], "text/csv")
+        self.assertIn("student_import_template", res["Content-Disposition"])
+        content = res.content.decode("utf-8")
+        self.assertIn("register_number", content)
+        self.assertIn("roll_number", content)
+        self.assertIn("first_name", content)
+
+    def test_bulk_student_csv_upload(self):
+        """Admin can upload a CSV file and batch register student user accounts."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.client.login(username="admin_user", password="pass123")
+        csv_data = (
+            "register_number,roll_number,first_name,last_name,email,blood_group,emergency_contact\n"
+            "1RV24CS801,801,Kavya,Nair,kavya.nair@rvce.edu.in,A+,+919876543201\n"
+            "1RV24CS802,802,Arjun,Menon,arjun.menon@rvce.edu.in,O+,+919876543202\n"
+        ).encode("utf-8")
+
+        upload_file = SimpleUploadedFile("students.csv", csv_data, content_type="text/csv")
+        res = self.client.post(
+            reverse("academics:batch_upload_students", args=[self.batch.id]),
+            {"csv_file": upload_file},
+            follow=True,
+        )
+        self.assertEqual(res.status_code, 200)
+
+        # Verify students and user accounts created
+        self.assertTrue(StudentProfile.objects.filter(register_number="1RV24CS801").exists())
+        self.assertTrue(StudentProfile.objects.filter(register_number="1RV24CS802").exists())
+        self.assertTrue(User.objects.filter(username="1rv24cs801").exists())
+        self.assertTrue(User.objects.filter(username="1rv24cs802").exists())
+
+    def test_student_transcript_generation_and_view(self):
+        """Official academic transcript calculates SGPA/CGPA and enforces viewer authorization."""
+        from enrollment.models import CourseOffering, StudentCourseEnrollment
+
+        # Setup an offering and enrollment with an awarded grade
+        offering = CourseOffering.objects.create(
+            course=self.course1,
+            batch=self.batch,
+            faculty=self.faculty_profile,
+            academic_year="2024-2025",
+            term="ODD",
+            section="A",
+        )
+        StudentCourseEnrollment.objects.create(
+            student=self.student_profile,
+            course_offering=offering,
+            grade="A",
+            attendance_percentage=Decimal("88.50"),
+        )
+
+        # Admin can view transcript
+        self.client.login(username="admin_user", password="pass123")
+        res_admin = self.client.get(reverse("academics:student_transcript", args=[self.student_profile.id]))
+        self.assertEqual(res_admin.status_code, 200)
+        self.assertContains(res_admin, "Official Academic Transcript")
+        self.assertContains(res_admin, self.student_profile.register_number)
+        self.assertContains(res_admin, "CS101")
+        self.assertContains(res_admin, "SGPA")
+
+        # Student themselves can view transcript
+        self.client.login(username="stud_john", password="pass123")
+        res_self = self.client.get(reverse("academics:student_transcript", args=[self.student_profile.id]))
+        self.assertEqual(res_self.status_code, 200)
+
+        # Unauthorized student cannot view another student's transcript
+        other_user = User.objects.create_user("stud_other", "other@rvce.edu.in", "pass123", role=User.Role.STUDENT)
+        StudentProfile.objects.create(user=other_user, batch=self.batch, register_number="1RV24CS777")
+        self.client.login(username="stud_other", password="pass123")
+        res_unauthorized = self.client.get(reverse("academics:student_transcript", args=[self.student_profile.id]))
+        self.assertEqual(res_unauthorized.status_code, 403)
+
+
+
+

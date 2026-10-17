@@ -43,12 +43,16 @@ urlpatterns = [
     path("batches/add/", views.batch_create_view, name="batch_create"),
     path("batches/<uuid:batch_id>/", views.batch_detail_view, name="batch_detail"),
     path("batches/<uuid:batch_id>/edit/", views.batch_edit_view, name="batch_edit"),
+    path("batches/<uuid:batch_id>/csv-template/", views.download_student_csv_template_view, name="batch_csv_template"),
+    path("batches/<uuid:batch_id>/upload-students/", views.batch_upload_students_csv_view, name="batch_upload_students"),
 
     # Students Directory & Profiles
     path("students/", views.student_list_view, name="student_list"),
     path("students/add/", views.student_create_view, name="student_create"),
     path("students/<uuid:student_id>/", views.student_detail_view, name="student_detail"),
     path("students/<uuid:student_id>/edit/", views.student_edit_view, name="student_edit"),
+    path("students/<uuid:student_id>/transcript/", views.student_transcript_view, name="student_transcript"),
+
 
     # Faculty Directory & Profiles
     path("faculty/", views.faculty_list_view, name="faculty_list"),

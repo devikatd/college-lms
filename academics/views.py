@@ -7,15 +7,17 @@ Provides complete lifecycle CRUD for:
 - Global Academic Data Retrieval & Search Engine
 """
 
+import csv
 from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q, Count, Avg
-from django.http import JsonResponse, HttpResponseForbidden
+from django.http import JsonResponse, HttpResponseForbidden, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
+
 
 from accounts.models import User
 from accounts.decorators import (
@@ -975,7 +977,135 @@ def global_search_view(request):
     return render(request, "academics/global_search.html", context)
 
 
+# ── Bulk Student CSV Onboarding & Official Transcript ─────────────────────────
+
+@login_required
+@dept_admin_required
+def download_student_csv_template_view(request, batch_id):
+    """Generates and downloads a pre-formatted CSV template for bulk student registration."""
+    batch = get_object_or_404(Batch.objects.select_related("program__department"), pk=batch_id)
+    if not request.user.is_college_admin and batch.program.department != request.user.department:
+        return HttpResponseForbidden("You do not have permission to manage this batch.")
+
+    response = HttpResponse(content_type="text/csv")
+    filename = f'student_import_template_{batch.name.replace(" ", "_")}.csv'
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    writer = csv.writer(response)
+    writer.writerow([
+        "register_number",
+        "roll_number",
+        "first_name",
+        "last_name",
+        "email",
+        "blood_group",
+        "emergency_contact",
+    ])
+    writer.writerow([
+        f"1RV{str(batch.admission_year)[-2:]}{batch.program.code[:2]}001",
+        "01",
+        "Aditi",
+        "Sharma",
+        "aditi.sharma@example.edu",
+        "B+",
+        "+91 98765 43210",
+    ])
+    writer.writerow([
+        f"1RV{str(batch.admission_year)[-2:]}{batch.program.code[:2]}002",
+        "02",
+        "Rohan",
+        "Verma",
+        "rohan.verma@example.edu",
+        "O+",
+        "+91 98765 43211",
+    ])
+    return response
+
+
+@login_required
+@dept_admin_required
+def batch_upload_students_csv_view(request, batch_id):
+    """Workstation for bulk importing student rosters via CSV into a specific cohort batch."""
+    batch = get_object_or_404(
+        Batch.objects.select_related("program__department", "scheme"),
+        pk=batch_id,
+    )
+    if not request.user.is_college_admin and batch.program.department != request.user.department:
+        return HttpResponseForbidden("You do not have permission to upload students to this batch.")
+
+    if request.method == "POST":
+        csv_file = request.FILES.get("csv_file")
+        if not csv_file:
+            messages.error(request, "Please select a valid CSV file to upload.")
+        elif not csv_file.name.endswith(".csv"):
+            messages.error(request, "Invalid file format. Please upload a .csv document.")
+        else:
+            try:
+                result = AcademicWorkflowService.bulk_import_students_from_csv(batch.id, csv_file)
+                if result["imported_count"] > 0:
+                    messages.success(request, result["message"])
+                else:
+                    messages.warning(request, result["message"])
+
+                if result["skipped_records"]:
+                    for item in result["skipped_records"][:5]:
+                        messages.warning(request, item)
+                    if len(result["skipped_records"]) > 5:
+                        messages.warning(request, f"...and {len(result['skipped_records']) - 5} more skipped records.")
+
+                return redirect("academics:batch_detail", batch_id=batch.id)
+            except Exception as e:
+                messages.error(request, f"Error processing CSV file: {str(e)}")
+
+    context = {
+        "page_title": f"Bulk Upload Students — {batch.name}",
+        "batch": batch,
+    }
+    return render(request, "academics/batch_upload_students.html", context)
+
+
+@login_required
+def student_transcript_view(request, student_id):
+    """
+    Renders printable official grade sheet & academic transcript with SGPA/CGPA evaluation.
+    Accessible by student, college admin, dept admin, and faculty.
+    """
+    student = get_object_or_404(
+        StudentProfile.objects.select_related(
+            "user",
+            "batch__program__department__college",
+            "batch__scheme",
+        ),
+        pk=student_id,
+    )
+
+    user = request.user
+    can_view = False
+    if user.is_college_admin:
+        can_view = True
+    elif user.is_student and hasattr(user, "student_profile") and user.student_profile.id == student.id:
+        can_view = True
+    elif user.is_dept_admin and user.department == student.batch.program.department:
+        can_view = True
+    elif user.is_faculty and (not user.department or user.department == student.batch.program.department):
+        can_view = True
+
+    if not can_view:
+        return HttpResponseForbidden("You do not have permission to view this academic transcript.")
+
+    transcript_data = AcademicWorkflowService.generate_student_transcript(student.id)
+
+    context = {
+        "page_title": f"Academic Transcript — {student.register_number}",
+        "student": student,
+        "transcript": transcript_data,
+        "college": student.batch.program.department.college,
+    }
+    return render(request, "academics/student_transcript.html", context)
+
+
 # ── Asynchronous Cascading Select API Endpoints ──────────────────────────────
+
 
 @login_required
 def api_departments(request, college_id):

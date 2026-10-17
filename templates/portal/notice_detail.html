@@ -1,0 +1,99 @@
+{% extends "dashboard_base.html" %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+    <!-- Breadcrumb / Back Navigation -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-xl); flex-wrap: wrap; gap: var(--space-md);">
+        <a href="{% url 'portal:notice_list' %}" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back to Notice Board
+        </a>
+
+        {% if can_manage %}
+        <div style="display: flex; gap: var(--space-sm);">
+            <a href="{% url 'portal:notice_delete' notice.id %}" class="btn" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                Delete Notice
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Notice Card -->
+    <div class="card" style="padding: var(--space-2xl); {% if notice.priority == 'CRITICAL' %}border-top: 4px solid var(--accent-rose);{% elif notice.priority == 'IMPORTANT' %}border-top: 4px solid #f59e0b;{% else %}border-top: 4px solid var(--primary);{% endif %}">
+        <!-- Badges Bar -->
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: var(--space-md);">
+            {% if notice.category == "URGENT" %}
+                <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 700;">URGENT</span>
+            {% elif notice.category == "EXAM" %}
+                <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #a78bfa; font-weight: 700;">EXAMINATIONS</span>
+            {% elif notice.category == "TIMETABLE" %}
+                <span class="badge" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; font-weight: 700;">TIMETABLE</span>
+            {% elif notice.category == "EVENT" %}
+                <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 700;">EVENT</span>
+            {% else %}
+                <span class="badge badge-dept">{{ notice.get_category_display }}</span>
+            {% endif %}
+
+            {% if notice.priority == "CRITICAL" %}
+                <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4);">High Priority</span>
+            {% elif notice.priority == "IMPORTANT" %}
+                <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4);">Important</span>
+            {% endif %}
+
+            {% if notice.department %}
+                <span class="badge" style="background: rgba(255, 255, 255, 0.05); color: var(--text-secondary); border: 1px solid var(--border-subtle);">
+                    Dept: {{ notice.department.name }} ({{ notice.department.code }})
+                </span>
+            {% else %}
+                <span class="badge" style="background: rgba(59, 130, 246, 0.1); color: var(--primary);">
+                    All Institution
+                </span>
+            {% endif %}
+
+            <span class="badge" style="background: rgba(255, 255, 255, 0.03); color: var(--text-muted);">
+                Audience: {{ notice.get_target_role_display }}
+            </span>
+        </div>
+
+        <!-- Headline -->
+        <h1 style="font-size: 1.85rem; font-weight: 800; line-height: 1.3; margin: 0 0 var(--space-md) 0; color: var(--text-primary);">
+            {{ notice.title }}
+        </h1>
+
+        <!-- Publication Info Banner -->
+        <div style="display: flex; align-items: center; gap: var(--space-md); padding: var(--space-md); background: rgba(255, 255, 255, 0.02); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); margin-bottom: var(--space-xl); font-size: 0.85rem; color: var(--text-muted); flex-wrap: wrap;">
+            <div>
+                Published: <strong style="color: var(--text-secondary);">{{ notice.created_at|date:"F d, Y \a\t h:i A" }}</strong>
+            </div>
+            <span>&bull;</span>
+            <div>
+                Author / Office: <strong style="color: var(--text-secondary);">{{ notice.publisher.get_full_name|default:notice.publisher.username }}</strong>
+            </div>
+        </div>
+
+        <!-- Notice Content Body -->
+        <div style="color: var(--text-secondary); font-size: 1.05rem; line-height: 1.8; margin-bottom: var(--space-2xl);">
+            {{ notice.content|linebreaks }}
+        </div>
+
+        <!-- Attached External Document Banner -->
+        {% if notice.attachment_url %}
+        <div style="background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: var(--radius-md); padding: var(--space-lg); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md); margin-top: var(--space-xl);">
+            <div style="display: flex; align-items: center; gap: var(--space-md);">
+                <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: rgba(59, 130, 246, 0.15); color: var(--primary); display: flex; align-items: center; justify-content: center;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+                <div>
+                    <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">Official Reference Document Attached</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); word-break: break-all;">{{ notice.attachment_url }}</div>
+                </div>
+            </div>
+            <a href="{{ notice.attachment_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Open Document &rarr;
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

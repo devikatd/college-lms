@@ -1,0 +1,135 @@
+{% extends "dashboard_base.html" %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+    <!-- Breadcrumb -->
+    <div style="display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-lg); font-size: 0.9rem; color: var(--text-muted);">
+        <a href="{% url 'academics:batch_list' %}" style="color: var(--text-muted); text-decoration: none;">Batches</a>
+        <span>/</span>
+        <a href="{% url 'academics:batch_detail' batch.id %}" style="color: var(--text-muted); text-decoration: none;">{{ batch.name }}</a>
+        <span>/</span>
+        <span style="color: var(--text-primary); font-weight: 600;">Bulk CSV Upload</span>
+    </div>
+
+    <!-- Header Section -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-xl); flex-wrap: wrap; gap: var(--space-md);">
+        <div>
+            <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem;">Bulk Student CSV Onboarding</h1>
+            <p style="color: var(--text-secondary); margin: 0;">
+                Target Batch: <strong style="color: var(--primary);">{{ batch.name }}</strong> ({{ batch.program.name }})
+            </p>
+        </div>
+        <a href="{% url 'academics:batch_csv_template' batch.id %}" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download CSV Template
+        </a>
+    </div>
+
+    <!-- Upload Card -->
+    <div class="card" style="margin-bottom: var(--space-xl);">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div style="border: 2px dashed var(--border-color); border-radius: var(--radius-lg); padding: var(--space-2xl) var(--space-xl); text-align: center; background: rgba(255, 255, 255, 0.02); transition: border-color var(--transition-fast);" id="drop-zone">
+                <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(59, 130, 246, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-md);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="12" y2="12"/><line x1="15" y1="15" x2="12" y2="12"/></svg>
+                </div>
+                <h3 style="font-size: 1.15rem; font-weight: 600; margin-bottom: 0.5rem;">Select Student Roster CSV File</h3>
+                <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: var(--space-lg); max-width: 480px; margin-left: auto; margin-right: auto;">
+                    Upload a comma-separated values (.csv) file containing student records. Accounts and dossiers will be auto-generated.
+                </p>
+
+                <input type="file" name="csv_file" id="csv_file" accept=".csv" required style="display: none;" onchange="handleFileSelected(this)">
+                
+                <label for="csv_file" class="btn btn-primary" style="cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Browse Local File
+                </label>
+
+                <div id="file-name-display" style="margin-top: var(--space-md); font-weight: 600; color: var(--accent-emerald); display: none;"></div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: var(--space-md); margin-top: var(--space-xl);">
+                <a href="{% url 'academics:batch_detail' batch.id %}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    Process & Import Students
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Instructions & Specifications -->
+    <div class="card">
+        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: var(--space-md); display: flex; align-items: center; gap: 0.5rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            CSV Format Specification & Guidelines
+        </h3>
+
+        <div style="overflow-x: auto; margin-bottom: var(--space-lg);">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Field Name</th>
+                        <th>Required?</th>
+                        <th>Description / Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>register_number</code></td>
+                        <td><span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">Required</span></td>
+                        <td>Official University Seat Number (USN) or Registration ID (e.g., <code>1RV24CS001</code>). Must be unique.</td>
+                    </tr>
+                    <tr>
+                        <td><code>roll_number</code></td>
+                        <td><span class="badge" style="background: rgba(100, 116, 139, 0.2); color: #94a3b8;">Optional</span></td>
+                        <td>Classroom roll or desk number (e.g., <code>CS-01</code>).</td>
+                    </tr>
+                    <tr>
+                        <td><code>first_name</code></td>
+                        <td><span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">Required</span></td>
+                        <td>Student's given first name (e.g., <code>Aditi</code>).</td>
+                    </tr>
+                    <tr>
+                        <td><code>last_name</code></td>
+                        <td><span class="badge" style="background: rgba(100, 116, 139, 0.2); color: #94a3b8;">Optional</span></td>
+                        <td>Student's surname or family name (e.g., <code>Sharma</code>).</td>
+                    </tr>
+                    <tr>
+                        <td><code>email</code></td>
+                        <td><span class="badge" style="background: rgba(100, 116, 139, 0.2); color: #94a3b8;">Optional</span></td>
+                        <td>Institutional or personal email. If omitted, default institutional email is generated.</td>
+                    </tr>
+                    <tr>
+                        <td><code>blood_group</code></td>
+                        <td><span class="badge" style="background: rgba(100, 116, 139, 0.2); color: #94a3b8;">Optional</span></td>
+                        <td>Medical record (e.g. <code>O+</code>, <code>A+</code>, <code>B-</code>). Defaults to <code>O+</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><code>emergency_contact</code></td>
+                        <td><span class="badge" style="background: rgba(100, 116, 139, 0.2); color: #94a3b8;">Optional</span></td>
+                        <td>Guardian contact telephone number (e.g. <code>+91 98765 43210</code>).</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="background: rgba(59, 130, 246, 0.08); border-left: 4px solid var(--primary); padding: var(--space-md); border-radius: var(--radius-sm); font-size: 0.875rem; color: var(--text-secondary);">
+            <strong>Automated Account Creation:</strong> For each imported student, the system provisions an active login user with username derived from USN (e.g. <code>1rv24cs001</code>) and default initial password <code>pass123</code>. The student can immediately access the Student Academic Portal.
+        </div>
+    </div>
+</div>
+
+<script>
+function handleFileSelected(input) {
+    const display = document.getElementById('file-name-display');
+    if (input.files && input.files[0]) {
+        display.textContent = 'Selected: ' + input.files[0].name + ' (' + Math.round(input.files[0].size / 1024) + ' KB)';
+        display.style.display = 'block';
+    } else {
+        display.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

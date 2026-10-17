@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    restart: always
+    command: gunicorn --bind 0.0.0.0:8000 --workers 3 lms_core.wsgi:application
+    volumes:
+      - lms_data:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=django-insecure-production-college-lms-super-secret-key-replace-in-env
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+
+volumes:
+  lms_data:

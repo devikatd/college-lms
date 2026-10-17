@@ -136,4 +136,42 @@
         </div>
     </div>
 </div>
+
+<!-- Campus Notices Card -->
+<div class="card" style="margin-top: var(--space-xl);">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <h3 class="card-title" style="margin: 0;">Institutional Academic Circulars & Notices</h3>
+        </div>
+        <div style="display: flex; gap: var(--space-xs);">
+            <a href="{% url 'portal:notice_create' %}" class="btn btn-primary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">+ Publish</a>
+            <a href="{% url 'portal:notice_list' %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">All Notices</a>
+        </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-md); margin-top: var(--space-md);">
+        {% for n in recent_notices %}
+        <div style="padding: var(--space-md); background: rgba(15, 23, 42, 0.4); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                    <span class="badge" style="font-size: 0.7rem; background: rgba(59, 130, 246, 0.15); color: var(--primary);">{{ n.get_category_display }}</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">{{ n.created_at|date:"M d" }}</span>
+                </div>
+                <a href="{% url 'portal:notice_detail' n.id %}" style="font-weight: 700; color: var(--text-primary); text-decoration: none; font-size: 0.95rem; line-height: 1.3; display: block; margin-bottom: 0.25rem;">
+                    {{ n.title }}
+                </a>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0; line-height: 1.4;">
+                    {{ n.content|truncatewords:14 }}
+                </p>
+            </div>
+            <div style="margin-top: 0.75rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted);">
+                <span>{{ n.publisher.get_full_name|default:n.publisher.username }}</span>
+                <a href="{% url 'portal:notice_detail' n.id %}" style="color: var(--primary); text-decoration: none; font-weight: 600;">Read &rarr;</a>
+            </div>
+        </div>
+        {% empty %}
+        <p style="color: var(--text-muted); font-size: 0.875rem; margin: var(--space-md) 0;">No active circulars on notice board.</p>
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}
