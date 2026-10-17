@@ -40,6 +40,8 @@ from enrollment.models import (
     TimetableEntry,
     CourseMaterial,
 )
+from portal.models import AcademicNotice
+
 
 
 class Command(BaseCommand):
@@ -346,14 +348,14 @@ class Command(BaseCommand):
                 defaults={"faculty": faculty, "is_active": True},
             )
 
-            # Enroll Sem 1 students with varied realistic attendance profiles
+            # Enroll Sem 1 students with varied realistic attendance profiles and grades
             enroll_profiles = [
-                ("student_rahul", Decimal("94.50")),
-                ("student_priya", Decimal("98.00")),
-                ("student_arjun", Decimal("76.50")),  # Warning threshold
-                ("student_ananya", Decimal("62.50")), # Critical Shortage (<75%)
+                ("student_rahul", Decimal("94.50"), "A+"),
+                ("student_priya", Decimal("98.00"), "O"),
+                ("student_arjun", Decimal("76.50"), "B+"),  # Warning threshold
+                ("student_ananya", Decimal("62.50"), "B"), # Critical Shortage (<75%)
             ]
-            for uname, att_pct in enroll_profiles:
+            for uname, att_pct, grade in enroll_profiles:
                 if uname in student_profile_map:
                     sp = student_profile_map[uname]
                     enr, _ = StudentCourseEnrollment.objects.get_or_create(
@@ -362,10 +364,13 @@ class Command(BaseCommand):
                         defaults={
                             "status": StudentCourseEnrollment.EnrollmentStatus.ENROLLED,
                             "attendance_percentage": att_pct,
+                            "grade": grade,
                         },
                     )
                     enr.attendance_percentage = att_pct
+                    enr.grade = grade
                     enr.save()
+
 
         # ── 11. Extensibility Seeds: Attendance Sessions & CIE Marks ─────────
         cs101_offering = CourseOffering.objects.filter(course=course_map["CS101"]).first()
@@ -458,5 +463,67 @@ class Command(BaseCommand):
                 )
 
             self.stdout.write(f"  [OK] Attendance sessions, CIE marks, Timetable, and Materials initialized.")
+
+            # ── 14. Campus Notices & Institutional Circulars ──────────────────
+            admin_user = User.objects.filter(role=User.Role.COLLEGE_ADMIN).first()
+            dept_admin = User.objects.filter(username="dept_admin_cs").first()
+            notices_seed = [
+                (
+                    "Annual Institutional Tech Symposium & Hackathon 2026",
+                    "We are thrilled to announce the 2026 RVCE Tech Symposium! Students across all departments are invited to submit innovative engineering projects, capstone prototypes, and research posters. Registration opens next Monday.",
+                    AcademicNotice.Category.EVENT,
+                    AcademicNotice.Priority.IMPORTANT,
+                    AcademicNotice.TargetRole.ALL,
+                    None,
+                    admin_user,
+                    "https://www.rvce.edu.in/symposium-2026",
+                ),
+                (
+                    "End-Semester Examination Time-Table & Hall Ticket Generation",
+                    "The final examination schedule for Odd Semester 2024-2025 has been ratified by the Controller of Examinations. Students with minimum 75% attendance can download their hall tickets from the student portal starting Friday.",
+                    AcademicNotice.Category.EXAM,
+                    AcademicNotice.Priority.CRITICAL,
+                    AcademicNotice.TargetRole.STUDENT,
+                    None,
+                    admin_user,
+                    "https://www.rvce.edu.in/exams/timetable.pdf",
+                ),
+                (
+                    "Department Curriculum Review Committee Meeting: 2026 Regulation",
+                    "A mandatory meeting for all Computer Science & Engineering faculty members is scheduled for Wednesday at 3:00 PM in Seminar Hall 1 to review AI/ML curriculum integration.",
+                    AcademicNotice.Category.CIRCULAR,
+                    AcademicNotice.Priority.NORMAL,
+                    AcademicNotice.TargetRole.FACULTY,
+                    cse_dept,
+                    dept_admin,
+                    "",
+                ),
+                (
+                    "Campus Wi-Fi Network Maintenance & Fiber Backbone Upgrade",
+                    "IT Infrastructure services will be carrying out planned core switch maintenance on Saturday between 11:00 PM and 3:00 AM. Intermittent internet access may be experienced across campus hostels and labs.",
+                    AcademicNotice.Category.URGENT,
+                    AcademicNotice.Priority.IMPORTANT,
+                    AcademicNotice.TargetRole.ALL,
+                    None,
+                    admin_user,
+                    "",
+                ),
+            ]
+            for title, content, cat, prio, target, dept_obj, pub, url in notices_seed:
+                AcademicNotice.objects.get_or_create(
+                    title=title,
+                    defaults={
+                        "content": content,
+                        "category": cat,
+                        "priority": prio,
+                        "target_role": target,
+                        "department": dept_obj,
+                        "publisher": pub,
+                        "attachment_url": url,
+                        "is_active": True,
+                    },
+                )
+            self.stdout.write(f"  [OK] 4 Institutional Academic Notices seeded.")
+
 
         self.stdout.write(self.style.SUCCESS("Demo academic data seeding completed successfully!"))
